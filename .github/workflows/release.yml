@@ -85,7 +85,11 @@ jobs:
           fi
 
       - name: Software bill of materials
-        run: dotnet sbom-tool generate -b artifacts/${{ matrix.runtime }} -bc . -pn Compendio -pv 0.1.0 -ps Compendio -nsb https://github.com/shernandezp
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          [ -z "$VERSION" ] && VERSION="${{ inputs.version }}"
+          dotnet sbom-tool generate -b artifacts/${{ matrix.runtime }} -bc . -pn Compendio -pv "$VERSION" -ps Compendio -nsb https://github.com/shernandezp
         continue-on-error: true
 
       - uses: softprops/action-gh-release@v2
@@ -126,6 +130,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # GHCR requires a lowercase image name, and github.repository carries the owner/name casing
+      # verbatim — "shernandezp/Compendio". Lowercasing it here rather than renaming the repository
+      # keeps the tag valid without changing anything a user has bookmarked.
+      - name: Lowercase the image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -133,5 +144,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.name }}:${{ github.ref_name }}
