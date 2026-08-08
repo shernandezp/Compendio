@@ -1,0 +1,53 @@
+# Reference unit. `sudo ./compendio install` writes this file with the real paths filled in — this
+# copy is here so an admin can read what they are about to get before running it.
+#
+#   sudo cp compendio.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now compendio
+
+[Unit]
+Description=Compendio — a Markdown folder that is the database of record
+Documentation=https://github.com/shernandezp/Compendio
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Type=notify because AddSystemd() reports readiness, so systemd knows the difference between "the
+# process started" and "it is serving requests".
+Type=notify
+ExecStart=/opt/compendio/compendio
+WorkingDirectory=/opt/compendio
+User=compendio
+Group=compendio
+
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=Urls=http://0.0.0.0:8080
+Environment=DataDir=/var/lib/compendio
+
+# Hardening. ReadWritePaths is the only place this service may write, which is also what makes the
+# "data directory not writable" startup guard a useful message rather than a mystery.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+ReadWritePaths=/var/lib/compendio
+
+# Logs go to the journal in English, always — ops greppability beats localized log lines.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=compendio
+
+[Install]
+WantedBy=multi-user.target

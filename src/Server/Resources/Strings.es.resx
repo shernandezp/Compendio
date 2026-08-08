@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Traducción de referencia: el texto en inglés es el original del que se traduce. -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="page.conflict.title"><value>Esta página cambió mientras la editabas</value></data>
+  <data name="page.conflict.detail"><value>Otra persona —o una edición hecha directamente en la carpeta— guardó esta página después de que la abrieras. Tu texto no se ha perdido: compara las dos versiones y elige qué conservar.</value></data>
+
+  <data name="page.not_found.title"><value>Página no encontrada</value></data>
+  <data name="page.not_found.detail"><value>No hay ninguna página en «{0}», o no tienes acceso a ella.</value></data>
+
+  <data name="page.forbidden.title"><value>No puedes editar esta página</value></data>
+  <data name="page.forbidden.detail"><value>Puedes leer «{0}» pero no modificarla. Pide a un administrador acceso de escritura a esta carpeta.</value></data>
+
+  <data name="path.invalid.title"><value>Ese nombre no se puede usar</value></data>
+  <data name="path.invalid.detail"><value>El nombre incumple una regla de nombres de archivo ({0}), así que no sobreviviría al copiarse a otro equipo. Prueba con un nombre más sencillo, sin símbolos.</value></data>
+
+  <data name="path.too_long.title"><value>Esa ruta es demasiado larga</value></data>
+  <data name="path.too_long.detail"><value>La ruta completa sería demasiado larga para que Windows la abra. Acorta el nombre de la página, o muévela a una carpeta más cercana al nivel superior.</value></data>
+
+  <data name="path.exists.title"><value>Ya hay algo ahí</value></data>
+  <data name="path.exists.detail"><value>«{0}» ya existe. Elige otro nombre, o abre el que ya está.</value></data>
+
+  <data name="secure.admin_required.title"><value>Solo los administradores pueden editar esto</value></data>
+  <data name="secure.admin_required.detail"><value>«{0}» está dentro de una carpeta cifrada. Cualquiera con acceso de lectura puede leerla, pero solo los administradores pueden modificarla.</value></data>
+
+  <data name="secure.unavailable.title"><value>El contenido cifrado no está disponible</value></data>
+  <data name="secure.unavailable.detail"><value>No se puede leer la clave de cifrado de «{0}», así que su contenido no se puede mostrar. El resto del wiki no está afectado. Ejecuta «compendio doctor» en el servidor para ver los detalles.</value></data>
+
+  <data name="secure.tampered.title"><value>Este archivo no superó su comprobación de integridad</value></data>
+  <data name="secure.tampered.detail"><value>No se pudo verificar «{0}»: se modificó fuera de Compendio, está dañado, o se movió entre carpetas. No se ha mostrado, a propósito.</value></data>
+
+  <data name="secure.nested.title"><value>Esa carpeta ya está cifrada</value></data>
+  <data name="secure.nested.detail"><value>«{0}» ya está dentro de una carpeta cifrada. El cifrado se aplica a todo lo que hay debajo, así que aquí no hay nada más que hacer.</value></data>
+
+  <data name="attachment.too_large.title"><value>Ese archivo es demasiado grande</value></data>
+  <data name="attachment.too_large.detail"><value>Los adjuntos están limitados a {0}.</value></data>
+
+  <data name="attachment.type_not_allowed.title"><value>Ese tipo de archivo no está permitido</value></data>
+  <data name="attachment.type_not_allowed.detail"><value>«{0}» no está en la lista de tipos de adjunto permitidos. Un administrador puede cambiar la lista en la configuración.</value></data>
+
+  <data name="attachment.limit_reached.title"><value>Demasiados adjuntos en esta página</value></data>
+  <data name="attachment.limit_reached.detail"><value>Una página puede tener como máximo {0} adjuntos.</value></data>
+
+  <data name="search.query_invalid.title"><value>No se pudo ejecutar esa búsqueda</value></data>
+  <data name="search.query_invalid.detail"><value>Prueba a quitar las comillas o los símbolos del cuadro de búsqueda.</value></data>
+
+  <data name="acl.last_admin.title"><value>Este es el último administrador</value></data>
+  <data name="acl.last_admin.detail"><value>Siempre debe quedar al menos un administrador activo; si no, nadie podría gestionar esta instancia. Asciende antes a otra persona.</value></data>
+
+  <data name="acl.invalid_subject.title"><value>Persona o grupo desconocido</value></data>
+  <data name="acl.invalid_subject.detail"><value>La persona o el grupo de esa regla de acceso ya no existe.</value></data>
+
+  <data name="setup.completed.title"><value>La configuración inicial ya está terminada</value></data>
+  <data name="setup.completed.detail"><value>Esta instancia ya tiene una cuenta de administrador. Inicia sesión en su lugar.</value></data>
+
+  <data name="validation.failed.title"><value>Hay datos que corregir</value></data>
+  <data name="validation.failed.detail"><value>Revisa los campos marcados e inténtalo de nuevo.</value></data>
+
+  <data name="auth.failed.title"><value>No se pudo iniciar sesión</value></data>
+  <data name="auth.failed.detail"><value>El usuario y la contraseña no coinciden, o la cuenta está desactivada.</value></data>
+
+  <data name="auth.password_reused.title"><value>Elige una contraseña distinta</value></data>
+  <data name="auth.password_reused.detail"><value>La contraseña nueva es la que ya está en uso.</value></data>
+
+  <data name="request.rate_limited.title"><value>Demasiados intentos</value></data>
+  <data name="request.rate_limited.detail"><value>Espera un momento e inténtalo de nuevo.</value></data>
+
+  <data name="version.not_found.title"><value>Versión no encontrada</value></data>
+  <data name="version.not_found.detail"><value>Esa versión ya no existe, o no tienes acceso a la página a la que pertenece.</value></data>
+
+  <data name="error.unexpected.title"><value>Algo salió mal</value></data>
+  <data name="error.unexpected.detail"><value>El servidor no pudo completar esa petición. Los detalles están en el registro del servidor.</value></data>
+
+  <data name="setup.firstPage.title"><value>Bienvenido a Compendio</value></data>
+  <data name="setup.firstPage.body"><value>Esta página es un archivo real en el disco. Abre la carpeta de contenido y la encontrarás como Markdown, exactamente como la ves aquí.
+
+Algunas cosas que merece la pena probar:
+
+- Edita esta página con el botón de arriba. Nunca tienes que escribir Markdown.
+- Crea una carpeta para cada área —IT, RR. HH., Procedimientos— y páginas dentro.
+- Restringe una carpeta desde la pantalla de Acceso cuando solo algunas personas deban verla.
+
+Borra esta página cuando ya no la necesites.</value></data>
+
+  <data name="doctor.ok"><value>Correcto</value></data>
+  <data name="doctor.warning"><value>Aviso</value></data>
+  <data name="doctor.error"><value>Problema</value></data>
+
+  <data name="ack.not_required.title"><value>Esta página no necesita confirmación</value></data>
+  <data name="ack.not_required.detail"><value>«{0}» no está marcada como que requiere confirmación de lectura, así que no hay nada que confirmar.</value></data>
+
+  <data name="ack.version_mismatch.title"><value>Esta página ha cambiado</value></data>
+  <data name="ack.version_mismatch.detail"><value>«{0}» se modificó mientras la leías. Recarga la página y confirma de nuevo, para que tu confirmación registre la versión que realmente has leído.</value></data>
+
+  <data name="ai.disabled.title"><value>El asistente de IA no está configurado</value></data>
+  <data name="ai.disabled.detail"><value>Esta instancia no tiene ningún proveedor de IA configurado, así que esta acción no existe. Un administrador puede añadir uno en Administración, Integraciones.</value></data>
+
+  <data name="ai.provider_error.title"><value>El proveedor de IA no pudo responder</value></data>
+  <data name="ai.provider_error.detail"><value>El endpoint de IA devolvió un error ({0}). No se ha cambiado nada. Un administrador puede comprobar la conexión en Administración, Integraciones.</value></data>
+
+  <data name="ai.timeout.title"><value>El proveedor de IA tardó demasiado</value></data>
+  <data name="ai.timeout.detail"><value>{0} no respondió a tiempo. No se ha cambiado nada. Un modelo local en una máquina ocupada puede ser simplemente lento; inténtalo de nuevo o con una selección más corta.</value></data>
+
+  <data name="ai.not_allowed_here.title"><value>La IA no está permitida en esta página</value></data>
+  <data name="ai.not_allowed_here.detail"><value>«{0}» está en un espacio que el asistente de IA no puede leer. Las carpetas cifradas quedan excluidas hasta que un administrador las habilite, tras ver a qué endpoint se enviaría su contenido.</value></data>
+
+  <data name="ai.quota_exceeded.title"><value>Has agotado tu cupo de IA por hoy</value></data>
+  <data name="ai.quota_exceeded.detail"><value>Has hecho {0} peticiones de IA en las últimas 24 horas, que es el límite que un administrador ha fijado por persona. No se ha cambiado nada. Tu cupo se libera a medida que tus peticiones anteriores salen de la ventana de 24 horas. El resto del wiki funciona con normalidad.</value></data>
+
+  <data name="ai.quota_exceeded_instance.title"><value>Este wiki ha agotado su cupo de IA por hoy</value></data>
+  <data name="ai.quota_exceeded_instance.detail"><value>Entre todos se han hecho {0} peticiones de IA en las últimas 24 horas, que es el límite fijado para esta instancia. No se ha cambiado nada, y no se debe a nada que hayas hecho tú. Se libera a medida que las peticiones anteriores salen de la ventana de 24 horas; un administrador puede subir el límite en Administración, Integraciones.</value></data>
+
+  <data name="git.unavailable.title"><value>El espejo de git no está disponible</value></data>
+  <data name="git.unavailable.detail"><value>El espejo no pudo ejecutarse: {0}. El resto de la instancia no se ve afectado.</value></data>
+
+  <data name="backup.passphrase_required.title"><value>Se necesita una frase de contraseña para la copia</value></data>
+  <data name="backup.passphrase_required.detail"><value>Esta instancia tiene {0} carpeta(s) cifrada(s), así que hace falta una frase de contraseña para proteger la clave de cifrado dentro del archivo. Indica una y guárdala en un lugar distinto de este servidor: la necesitarás para restaurar.</value></data>
+
+  <data name="backup.key_unavailable.title"><value>No se pudo hacer la copia de seguridad</value></data>
+  <data name="backup.key_unavailable.detail"><value>No se pudo leer la clave maestra, así que no se puede crear una copia restaurable. Ejecuta 'compendio doctor' en el servidor.</value></data>
+
+</root>

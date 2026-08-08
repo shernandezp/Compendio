@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Server-side strings only: ProblemDetails titles and details, validation, setup bootstrap, CLI
+    and doctor output. Everything that can be localized on the client is, and this set stays small
+    on purpose.
+
+    Keys are semantic paths, never English sentences — an English sentence as a key makes every copy
+    tweak a breaking change across all locales.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="page.conflict.title"><value>This page changed while you were editing it</value></data>
+  <data name="page.conflict.detail"><value>Somebody else — or an edit made directly in the folder — saved this page after you opened it. Your text has not been lost: compare the two versions and choose what to keep.</value></data>
+
+  <data name="page.not_found.title"><value>Page not found</value></data>
+  <data name="page.not_found.detail"><value>There is no page at "{0}", or you do not have access to it.</value></data>
+
+  <data name="page.forbidden.title"><value>You cannot edit this page</value></data>
+  <data name="page.forbidden.detail"><value>You can read "{0}" but not change it. Ask an administrator for write access to this folder.</value></data>
+
+  <data name="path.invalid.title"><value>That name cannot be used</value></data>
+  <data name="path.invalid.detail"><value>The name breaks a file-naming rule ({0}), so it would not survive being copied to another computer. Try a simpler name without symbols.</value></data>
+
+  <data name="path.too_long.title"><value>That path is too long</value></data>
+  <data name="path.too_long.detail"><value>The full path would be too long for Windows to open. Shorten the page name, or move it into a folder nearer the top.</value></data>
+
+  <data name="path.exists.title"><value>Something is already there</value></data>
+  <data name="path.exists.detail"><value>"{0}" already exists. Choose a different name, or open the existing one.</value></data>
+
+  <data name="secure.admin_required.title"><value>Only administrators can edit this</value></data>
+  <data name="secure.admin_required.detail"><value>"{0}" is inside an encrypted folder. Anyone with read access can read it, but only administrators can change it.</value></data>
+
+  <data name="secure.unavailable.title"><value>Encrypted content is unavailable</value></data>
+  <data name="secure.unavailable.detail"><value>The encryption key for "{0}" cannot be read, so its contents cannot be shown. The rest of the wiki is unaffected. Run "compendio doctor" on the server for details.</value></data>
+
+  <data name="secure.tampered.title"><value>This file failed its integrity check</value></data>
+  <data name="secure.tampered.detail"><value>"{0}" could not be verified: it was changed outside Compendio, is damaged, or was moved between folders. It has not been shown, on purpose.</value></data>
+
+  <data name="secure.nested.title"><value>That folder is already encrypted</value></data>
+  <data name="secure.nested.detail"><value>"{0}" is already inside an encrypted folder. Encryption applies to everything underneath, so there is nothing more to do here.</value></data>
+
+  <data name="attachment.too_large.title"><value>That file is too large</value></data>
+  <data name="attachment.too_large.detail"><value>Attachments are limited to {0}.</value></data>
+
+  <data name="attachment.type_not_allowed.title"><value>That file type is not allowed</value></data>
+  <data name="attachment.type_not_allowed.detail"><value>"{0}" is not on the list of allowed attachment types. An administrator can change the list in the settings.</value></data>
+
+  <data name="attachment.limit_reached.title"><value>Too many attachments on this page</value></data>
+  <data name="attachment.limit_reached.detail"><value>A page can have at most {0} attachments.</value></data>
+
+  <data name="search.query_invalid.title"><value>That search could not be run</value></data>
+  <data name="search.query_invalid.detail"><value>Try removing quotation marks or symbols from the search box.</value></data>
+
+  <data name="acl.last_admin.title"><value>This is the last administrator</value></data>
+  <data name="acl.last_admin.detail"><value>There must always be at least one active administrator, otherwise nobody could manage this instance. Promote somebody else first.</value></data>
+
+  <data name="acl.invalid_subject.title"><value>Unknown person or group</value></data>
+  <data name="acl.invalid_subject.detail"><value>The person or group in that access rule no longer exists.</value></data>
+
+  <data name="setup.completed.title"><value>Setup is already finished</value></data>
+  <data name="setup.completed.detail"><value>This instance already has an administrator account. Sign in instead.</value></data>
+
+  <data name="validation.failed.title"><value>Some details need fixing</value></data>
+  <data name="validation.failed.detail"><value>Check the highlighted fields and try again.</value></data>
+
+  <data name="auth.failed.title"><value>Sign-in failed</value></data>
+  <data name="auth.failed.detail"><value>That user name and password do not match, or the account has been deactivated.</value></data>
+
+  <data name="auth.password_reused.title"><value>Choose a different password</value></data>
+  <data name="auth.password_reused.detail"><value>The new password is the one already in use.</value></data>
+
+  <data name="request.rate_limited.title"><value>Too many attempts</value></data>
+  <data name="request.rate_limited.detail"><value>Wait a moment and try again.</value></data>
+
+  <data name="version.not_found.title"><value>Version not found</value></data>
+  <data name="version.not_found.detail"><value>That version no longer exists, or you do not have access to the page it belongs to.</value></data>
+
+  <data name="error.unexpected.title"><value>Something went wrong</value></data>
+  <data name="error.unexpected.detail"><value>The server could not complete that request. The details are in the server log.</value></data>
+
+  <data name="setup.firstPage.title"><value>Welcome to Compendio</value></data>
+  <data name="setup.firstPage.body"><value>This page is a real file on disk. Open the content folder and you will find it as Markdown, exactly as you see it here.
+
+Some things worth trying:
+
+- Edit this page with the button above. You never have to type Markdown.
+- Create a folder for each area — IT, HR, Procedures — and pages inside it.
+- Restrict a folder from the Access screen when only some people should see it.
+
+Delete this page when you no longer need it.</value></data>
+
+  <data name="doctor.ok"><value>OK</value></data>
+  <data name="doctor.warning"><value>Warning</value></data>
+  <data name="doctor.error"><value>Problem</value></data>
+
+  <data name="ack.not_required.title"><value>This page does not need acknowledging</value></data>
+  <data name="ack.not_required.detail"><value>"{0}" is not marked as requiring acknowledgment, so there is nothing to confirm.</value></data>
+
+  <data name="ack.version_mismatch.title"><value>This page has changed</value></data>
+  <data name="ack.version_mismatch.detail"><value>"{0}" was revised while you were reading it. Reload the page and confirm again, so your confirmation records the version you actually read.</value></data>
+
+  <data name="ai.disabled.title"><value>The AI assistant is not configured</value></data>
+  <data name="ai.disabled.detail"><value>No AI provider is set up on this instance, so this action does not exist. An administrator can add one under Administration, Integrations.</value></data>
+
+  <data name="ai.provider_error.title"><value>The AI provider could not answer</value></data>
+  <data name="ai.provider_error.detail"><value>The AI endpoint returned an error ({0}). Nothing was changed. An administrator can check the connection under Administration, Integrations.</value></data>
+
+  <data name="ai.timeout.title"><value>The AI provider took too long</value></data>
+  <data name="ai.timeout.detail"><value>{0} did not answer in time. Nothing was changed. A local model on a busy machine can simply be slow; try again, or try a shorter selection.</value></data>
+
+  <data name="ai.not_allowed_here.title"><value>AI is not allowed on this page</value></data>
+  <data name="ai.not_allowed_here.detail"><value>"{0}" is in a space the AI assistant may not read. Encrypted folders are excluded until an administrator opts them in, having been told which endpoint their contents would be sent to.</value></data>
+
+  <data name="ai.quota_exceeded.title"><value>You have used your AI allowance for today</value></data>
+  <data name="ai.quota_exceeded.detail"><value>You have made {0} AI requests in the last 24 hours, which is the limit an administrator set for each person. Nothing was changed. Your allowance frees up as your earlier requests age out of the 24-hour window. Everything else in the wiki works normally.</value></data>
+
+  <data name="ai.quota_exceeded_instance.title"><value>This wiki has used its AI allowance for today</value></data>
+  <data name="ai.quota_exceeded_instance.detail"><value>Everyone together has made {0} AI requests in the last 24 hours, which is the limit set for this instance. Nothing was changed, and this is not about anything you did. It frees up as earlier requests age out of the 24-hour window; an administrator can raise the limit under Administration, Integrations.</value></data>
+
+  <data name="git.unavailable.title"><value>The git mirror is unavailable</value></data>
+  <data name="git.unavailable.detail"><value>The mirror could not run: {0}. Everything else on this instance is unaffected.</value></data>
+
+  <data name="backup.passphrase_required.title"><value>A backup passphrase is required</value></data>
+  <data name="backup.passphrase_required.detail"><value>This instance has {0} encrypted folder(s), so a passphrase is needed to protect the encryption key inside the archive. Provide one and keep it somewhere other than this server — you will need it to restore.</value></data>
+
+  <data name="backup.key_unavailable.title"><value>The backup could not be made</value></data>
+  <data name="backup.key_unavailable.detail"><value>The master key could not be read, so a restorable backup cannot be made. Run 'compendio doctor' on the server.</value></data>
+
+</root>

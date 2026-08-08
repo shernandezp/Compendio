@@ -1,0 +1,33 @@
+## .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+.vs/
+
+## Node / client
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+## Server-hosted SPA output (built by MSBuild, never committed)
+src/Server/wwwroot/
+
+## Runtime data — content, database, logs and keys never belong in version control
+data/
+*.db
+*.db-wal
+*.db-shm
+
+## Local tooling
+.idea/
+.DS_Store
+Thumbs.db
+
+## Local-only working files — planning notes and the implementation scratch folder, never committed
+compendio-implementation/
+project-overview.md

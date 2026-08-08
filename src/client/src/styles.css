@@ -1,0 +1,183 @@
+/*
+  Only what Mantine does not cover: rendered page content, diffs, and the two mobile rules that keep
+  a runbook readable one-handed at 360 px.
+
+  No `left` or `right` anywhere — logical properties throughout, so a future RTL locale needs no
+  rewrite.
+*/
+
+:root {
+  --compendio-content-measure: 72ch;
+}
+
+.compendio-content {
+  max-inline-size: var(--compendio-content-measure);
+  line-height: 1.65;
+  overflow-wrap: break-word;
+}
+
+.compendio-content h1,
+.compendio-content h2,
+.compendio-content h3 {
+  margin-block-start: 1.8em;
+  margin-block-end: 0.6em;
+  scroll-margin-block-start: 5rem;
+}
+
+.compendio-content h1:first-child {
+  margin-block-start: 0;
+}
+
+.compendio-content p,
+.compendio-content ul,
+.compendio-content ol {
+  margin-block: 0.8em;
+}
+
+.compendio-content code {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  border-radius: var(--mantine-radius-sm);
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+}
+
+.compendio-content pre {
+  padding: var(--mantine-spacing-md);
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  /*
+    Wide content scrolls inside its own container so the page itself never scrolls sideways.
+    This is the rule the mobile acceptance scenario depends on.
+  */
+  overflow-x: auto;
+  max-inline-size: 100%;
+}
+
+.compendio-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.compendio-content table {
+  border-collapse: collapse;
+  inline-size: max-content;
+  max-inline-size: 100%;
+}
+
+/* Same reason: a wide table scrolls, the page does not. */
+.compendio-content .table-scroll,
+.compendio-content > table {
+  display: block;
+  overflow-x: auto;
+}
+
+.compendio-content th,
+.compendio-content td {
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  padding: 0.5em 0.75em;
+  text-align: start;
+}
+
+.compendio-content blockquote {
+  margin-inline: 0;
+  padding-inline-start: var(--mantine-spacing-md);
+  border-inline-start: 3px solid var(--mantine-color-indigo-4);
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+}
+
+.compendio-content img {
+  max-inline-size: 100%;
+  block-size: auto;
+}
+
+.compendio-content mark {
+  background: light-dark(var(--mantine-color-yellow-2), var(--mantine-color-yellow-9));
+  color: inherit;
+}
+
+/* A wiki link whose target does not exist, or which the reader cannot see. */
+.compendio-content .compendio-link-unresolved {
+  color: var(--mantine-color-red-6);
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+.compendio-content input[type='checkbox'] {
+  margin-inline-end: 0.5em;
+  /* A comfortable target for a thumb at a server rack. */
+  inline-size: 1.1em;
+  block-size: 1.1em;
+}
+
+/* ---- Diffs ------------------------------------------------------------------------------------ */
+
+.compendio-diff {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--mantine-font-size-sm);
+  overflow-x: auto;
+}
+
+.compendio-diff .line {
+  display: block;
+  padding-inline: var(--mantine-spacing-xs);
+  white-space: pre-wrap;
+}
+
+.compendio-diff .added,
+.compendio-rendered-diff .diff-added {
+  background: light-dark(var(--mantine-color-green-0), rgba(43, 138, 62, 0.18));
+}
+
+.compendio-diff .removed,
+.compendio-rendered-diff .diff-removed {
+  background: light-dark(var(--mantine-color-red-0), rgba(224, 49, 49, 0.18));
+}
+
+.compendio-diff .modified,
+.compendio-rendered-diff .diff-modified {
+  background: light-dark(var(--mantine-color-yellow-0), rgba(240, 140, 0, 0.15));
+}
+
+.compendio-rendered-diff section {
+  padding-inline: var(--mantine-spacing-sm);
+  border-inline-start: 3px solid transparent;
+}
+
+.compendio-rendered-diff .diff-added {
+  border-inline-start-color: var(--mantine-color-green-6);
+}
+
+.compendio-rendered-diff .diff-removed {
+  border-inline-start-color: var(--mantine-color-red-6);
+}
+
+/* ---- Mermaid ---------------------------------------------------------------------------------- */
+
+pre.mermaid {
+  background: none;
+  text-align: center;
+  overflow-x: auto;
+}
+
+/* ---- Accessibility ---------------------------------------------------------------------------- */
+
+.skip-link {
+  position: absolute;
+  inset-block-start: -3rem;
+  inset-inline-start: var(--mantine-spacing-sm);
+  z-index: 1000;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  background: var(--mantine-color-body);
+  border-radius: var(--mantine-radius-sm);
+  transition: inset-block-start 120ms ease;
+}
+
+.skip-link:focus {
+  inset-block-start: var(--mantine-spacing-sm);
+}
+
+:focus-visible {
+  outline: 2px solid var(--mantine-color-indigo-5);
+  outline-offset: 2px;
+}

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Compendio</title>
+
+    <!--
+      The per-response CSP nonce, substituted by the server on the way out (SpaShell). Mantine and
+      Mermaid both inject <style> elements at runtime and both are handed this value; without it a
+      `style-src 'self' 'nonce-…'` policy blocks them and the UI renders unstyled.
+    -->
+    <meta name="csp-nonce" content="__CSP_NONCE__" />
+
+    <!--
+      Paints the background before React mounts, so a dark machine never flashes white.
+
+      A <style> block and not an inline script, deliberately: the CSP is `script-src 'self'` with no
+      inline script at all, and this is the one thing that would otherwise have needed an exception.
+      It carries the nonce because the policy has no `'unsafe-inline'` for style elements.
+    -->
+    <style nonce="__CSP_NONCE__">
+      :root { color-scheme: light dark; }
+      html, body, #root { height: 100%; margin: 0; }
+      body { background: #ffffff; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #1a1b1e; }
+      }
+      /* Respect the user's own choice once it is known. */
+      html[data-mantine-color-scheme='light'] body { background: #ffffff; }
+      html[data-mantine-color-scheme='dark'] body { background: #1a1b1e; }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

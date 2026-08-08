@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  # Key parity first, then types, then tests, then the build. Ordered cheapest-failure-first so a
+  # missing translation key does not wait behind a four-minute bundle.
+  client:
+    name: client
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: src/client/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check:i18n
+      - run: npx tsc -b
+      - run: npx vitest run
+      - run: npx vite build
+
+  server:
+    name: server (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both, because the path rules, the file watcher and the atomic write behave differently on
+        # each — and content written on one has to survive being opened on the other.
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - run: dotnet restore -p:SkipClientBuild=true
+      - run: dotnet build --no-restore -c Release -p:SkipClientBuild=true
+      - run: dotnet test --no-build -c Release -p:SkipClientBuild=true --logger "trx;LogFileName=results.trx"
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: '**/results.trx'
+
+  contract:
+    name: contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # The committed OpenAPI document and the generated client types must match the code. Failing
+      # on a diff is what stops the contract drifting silently between releases.
+      - name: Regenerate the OpenAPI document
+        run: |
+          set -euo pipefail
+          dotnet build src/Server/Compendio.Server.csproj -c Release -p:SkipClientBuild=true
+
+          # A background PID, not a job spec: `kill %1` needs job control, which a non-interactive
+          # shell does not have, so the old form left the server running and masked failures.
+          ASPNETCORE_ENVIRONMENT=Development \
+          DataDir="$(mktemp -d)" \
+          Urls=http://127.0.0.1:8099 \
+            dotnet run --project src/Server --no-build -c Release &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+
+          for _ in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8099/openapi/v1.json -o /tmp/openapi.json; then
+              break
+            fi
+            sleep 1
+          done
+
+          test -s /tmp/openapi.json
+          # Formatted by the same script that produced the committed copy. Node rather than Python
+          # because Python's json.dump escapes non-ASCII by default, so the two would never agree on
+          # a document containing a single accented character.
+          node scripts/format-openapi.mjs /tmp/openapi.json docs/openapi/v1.json
+
+      - name: Fail on a contract diff
+        run: git diff --exit-code -- docs/openapi/v1.json
+
+  licence:
+    name: licence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # A copyleft or source-available dependency is incompatible with distributing this under
+      # AGPL-3.0-or-later, and finding that out at release time is too late.
+      - name: Server dependency licences
+        run: |
+          dotnet restore -p:SkipClientBuild=true
+          dotnet list package --include-transitive --format json > packages.json
+          python3 .github/scripts/check-licences.py packages.json
+
+      - name: Client dependency licences
+        working-directory: src/client
+        run: |
+          npm ci --no-audit --no-fund
+          npx license-checker-rseidelsohn --production --summary \
+            --onlyAllow "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;CC0-1.0;Unlicense;Python-2.0;BlueOak-1.0.0;CC-BY-4.0"
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: Compendio
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        run: docker build -f Compendio/deploy/Dockerfile -t compendio:ci .
+
+      # Building an image proves nothing about whether it starts. Booting it and polling /health
+      # is the cheapest test that catches a missing runtime dependency in the chiselled base.
+      - name: Boot and poll /health
+        run: |
+          docker run -d --name compendio -p 8080:8080 compendio:ci
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/health; then
+              echo "healthy"
+              # The SPA has to be served too: an install where the API answers and the site 404s is
+              # the exact failure the two MSBuild wiring paths exist to prevent.
+              curl -sf http://localhost:8080/ | grep -q '<div id="root">'
+              docker rm -f compendio
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs compendio
+          exit 1

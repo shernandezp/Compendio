@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="README.md" />
+    <File Path=".github/workflows/ci.yml" />
+    <File Path=".github/workflows/release.yml" />
+    <File Path="deploy/Dockerfile" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Server.Tests/">
+    <Project Path="src/Server.Tests/Compendio.Server.Tests.csproj" />
+  </Folder>
+  <Folder Name="/src/Server/">
+    <Project Path="src/Server/Compendio.Server.csproj" />
+  </Folder>
+</Solution>

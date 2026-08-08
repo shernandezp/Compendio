@@ -1,0 +1,19 @@
+{
+  "name": "Compendio",
+  "short_name": "Compendio",
+  "description": "A Markdown folder that is the database of record.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#4c6ef5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

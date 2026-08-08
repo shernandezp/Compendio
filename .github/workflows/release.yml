@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    name: publish (${{ matrix.runtime }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: win-x64
+            os: windows-latest
+          - runtime: linux-x64
+            os: ubuntu-latest
+          - runtime: linux-arm64
+            os: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: src/client/package-lock.json
+
+      - name: Build the client
+        working-directory: src/client
+        run: |
+          npm ci --no-audit --no-fund
+          npm run check:i18n
+          npm run build
+
+      - name: Publish
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          [ -z "$VERSION" ] && VERSION="${{ inputs.version }}"
+
+          # Self-contained, single-file, untrimmed. Trimming breaks EF Core, and ~100 MB is the
+          # accepted price of "download one file and run it".
+          dotnet publish src/Server/Compendio.Server.csproj \
+            -c Release \
+            -r ${{ matrix.runtime }} \
+            -o artifacts/${{ matrix.runtime }} \
+            -p:SelfContainedPublish=true \
+            -p:SkipClientBuild=true \
+            -p:Version="$VERSION"
+
+      - name: Archive and checksum
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          [ -z "$VERSION" ] && VERSION="${{ inputs.version }}"
+          NAME="compendio-$VERSION-${{ matrix.runtime }}.zip"
+
+          cd artifacts/${{ matrix.runtime }}
+          if command -v zip >/dev/null; then zip -qr "../$NAME" .; else
+            powershell -Command "Compress-Archive -Path * -DestinationPath ../$NAME"
+          fi
+          cd ..
+
+          # Published beside the artifact because releases are unsigned by decision. A checksum is
+          # the honest substitute for a signature, and the README says so.
+          if command -v sha256sum >/dev/null; then
+            sha256sum "$NAME" > "$NAME.sha256"
+          else
+            powershell -Command "(Get-FileHash '$NAME' -Algorithm SHA256).Hash.ToLower() + '  $NAME' | Set-Content '$NAME.sha256'"
+          fi
+
+      - name: Software bill of materials
+        run: dotnet sbom-tool generate -b artifacts/${{ matrix.runtime }} -bc . -pn Compendio -pv 0.1.0 -ps Compendio -nsb https://github.com/shernandezp
+        continue-on-error: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+            artifacts/**/_manifest/**
+          body: |
+            ## Verifying your download
+
+            Windows releases are **unsigned**. On first run, SmartScreen shows "Windows protected
+            your PC" — click **More info → Run anyway**.
+
+            Verify the checksum instead:
+
+            ```powershell
+            Get-FileHash .\compendio-*-win-x64.zip -Algorithm SHA256
+            ```
+
+            ```bash
+            sha256sum -c compendio-*-linux-x64.zip.sha256
+            ```
+
+  container:
+    name: container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: Compendio
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Compendio/deploy/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}

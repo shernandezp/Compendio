@@ -1,0 +1,49 @@
+# Exactly one service. A compose file that defines two is a compose file that has stopped being
+# "copy one file and run it" — the whole point is that Compendio needs nothing beside it.
+
+services:
+  compendio:
+    image: ghcr.io/shernandezp/compendio:latest
+    # Or build it yourself from the repository root:
+    # build:
+    #   context: ..
+    #   dockerfile: deploy/Dockerfile
+    container_name: compendio
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      # Section__Key is the framework's own convention. There is no COMPENDIO_* prefix.
+      Instance__DefaultLanguage: es
+      Instance__DefaultAccess: Read
+      Security__RequireHttps: "false"
+      Content__WatcherMode: Auto
+
+      # Set this if your threat model includes somebody walking off with the disk. Once set, the
+      # instance cannot open encrypted folders without it.
+      # Security__MasterPassphrase: change-me
+
+    volumes:
+      # Your pages, as Markdown files. Open this folder in VS Code — that is the product.
+      - ./data/content:/data/content
+
+      # Users, permissions, history, the search index and the audit log.
+      - ./data/db:/data/db
+
+      # Its own volume on purpose. This holds the master encryption key and the Data Protection key
+      # ring: lose it and every encrypted page becomes unreadable, and every user is signed out on
+      # every restart.
+      - ./data/keys:/data/keys
+
+    healthcheck:
+      test: ["CMD", "/app/compendio", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    # SIGTERM is handled: the watcher stops, the index queue is left durable, and the single-instance
+    # lock is released.
+    stop_grace_period: 30s

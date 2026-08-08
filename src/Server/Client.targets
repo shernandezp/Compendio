@@ -1,0 +1,83 @@
+<!--
+  Builds the SPA into wwwroot and gets it into the output — for `dotnet build` *and*
+  `dotnet publish`.
+
+  The SDK stages the two differently. Its static-web-assets machinery serves wwwroot from the
+  project directory during development via a manifest, and copies it only on publish; this host
+  overrides ContentRootPath to the binary's directory (a Windows Service and a systemd unit both
+  start with a working directory nobody chose), so that manifest never applies. Wiring only the
+  publish path yields exactly the failure this project must not ship: the API answers and the site
+  returns 404.
+
+  So static web assets are turned off and the files are copied explicitly, identically, in both
+  paths — and CI boots the container and asks for `/` as well as `/health`.
+
+  Set -p:SkipClientBuild=true to skip the npm work (the server-only CI job, and `dotnet ef`).
+-->
+<Project>
+
+  <PropertyGroup>
+    <ClientDir>$(MSBuildThisFileDirectory)..\client</ClientDir>
+    <ClientStamp>$(ClientDir)\node_modules\.install-stamp</ClientStamp>
+    <WwwRootDir>$(MSBuildThisFileDirectory)wwwroot</WwwRootDir>
+    <SkipClientBuild Condition="'$(SkipClientBuild)' == ''">false</SkipClientBuild>
+
+    <!-- We copy wwwroot ourselves, in both paths. See the comment above. -->
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+  <Target Name="ClientInstall"
+          Condition="'$(SkipClientBuild)' != 'true' AND Exists('$(ClientDir)\package.json')"
+          Inputs="$(ClientDir)\package.json;$(ClientDir)\package-lock.json"
+          Outputs="$(ClientStamp)">
+    <Message Importance="high" Text="Compendio: installing client dependencies…" />
+    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(ClientDir)" />
+    <Touch Files="$(ClientStamp)" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="ClientBuild"
+          DependsOnTargets="ClientInstall"
+          Condition="'$(SkipClientBuild)' != 'true' AND Exists('$(ClientDir)\package.json')">
+    <Message Importance="high" Text="Compendio: building the client into wwwroot…" />
+    <Exec Command="npm run build" WorkingDirectory="$(ClientDir)" />
+  </Target>
+
+  <!--
+    Collected in a target rather than a top-level ItemGroup because on a clean build wwwroot does
+    not exist yet at evaluation time, so a glob would find nothing.
+  -->
+  <Target Name="CollectClientOutput" DependsOnTargets="ClientBuild">
+    <ItemGroup>
+      <ClientAsset Include="$(WwwRootDir)\**\*" />
+    </ItemGroup>
+
+    <Message Importance="normal" Text="Compendio: collected @(ClientAsset->Count()) client asset(s) from $(WwwRootDir)." />
+
+    <Warning Condition="'@(ClientAsset)' == ''"
+             Text="wwwroot is empty. The API will answer but the site will return 404. Run 'npm run build' in src/client." />
+  </Target>
+
+  <!--
+    The Condition goes on the Copy task and not on the Target. A target-level condition is evaluated
+    *before* DependsOnTargets runs, so `'@(ClientAsset)' != ''` there is always false on a clean
+    build and the target quietly skips itself — which is how the site ends up 404ing while the build
+    reports success.
+  -->
+
+  <!-- `dotnet build` -->
+  <Target Name="CopyClientToOutput" AfterTargets="Build" DependsOnTargets="CollectClientOutput">
+    <Copy SourceFiles="@(ClientAsset)"
+          DestinationFiles="@(ClientAsset->'$(OutputPath)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(ClientAsset)' != ''" />
+  </Target>
+
+  <!-- `dotnet publish` -->
+  <Target Name="CopyClientToPublish" AfterTargets="Publish" DependsOnTargets="CollectClientOutput">
+    <Copy SourceFiles="@(ClientAsset)"
+          DestinationFiles="@(ClientAsset->'$(PublishDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(ClientAsset)' != ''" />
+  </Target>
+
+</Project>

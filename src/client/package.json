@@ -1,0 +1,49 @@
+{
+  "name": "compendio-client",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "check": "npm run check:i18n && tsc -b && vitest run"
+  },
+  "dependencies": {
+    "@mantine/core": "9.5.0",
+    "@mantine/hooks": "9.5.0",
+    "@mantine/modals": "9.5.0",
+    "@mantine/notifications": "9.5.0",
+    "@milkdown/crepe": "7.21.3",
+    "@milkdown/kit": "7.21.3",
+    "@tabler/icons-react": "3.46.0",
+    "@tanstack/react-query": "5.101.4",
+    "dayjs": "1.11.21",
+    "i18next": "26.3.6",
+    "mermaid": "11.16.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-i18next": "17.0.11",
+    "react-router-dom": "7.18.2",
+    "remark-gfm": "4.0.1",
+    "remark-parse": "11.0.0",
+    "remark-stringify": "11.0.0",
+    "unified": "11.0.5"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "7.0.0",
+    "@testing-library/react": "16.3.2",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.5",
+    "jsdom": "30.0.1",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "vite": "8.2.0",
+    "vitest": "4.1.10"
+  }
+}
