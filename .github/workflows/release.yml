@@ -105,6 +105,19 @@ jobs:
           export PATH="$PATH:$HOME/.dotnet/tools"
 
           sbom-tool generate -b artifacts/${{ matrix.runtime }} -bc . -pn Compendio -pv "$VERSION" -ps Compendio -nsb https://github.com/shernandezp
+
+          # Flattened to a name that carries the runtime. The tool always writes
+          # `_manifest/spdx_2.2/manifest.spdx.json`, three matrix jobs share one release, and
+          # assets are uploaded by base name — so uploading the tree as-is means three jobs
+          # racing to claim one asset called `manifest.spdx.json`, which is both a collision and
+          # a manifest nobody can tell the runtime of.
+          MANIFEST=$(find "artifacts/${{ matrix.runtime }}/_manifest" -name manifest.spdx.json | head -1)
+
+          if [ -n "$MANIFEST" ]; then
+            cp "$MANIFEST" "artifacts/compendio-$VERSION-${{ matrix.runtime }}.spdx.json"
+          else
+            echo "::warning::No SPDX manifest was produced for ${{ matrix.runtime }}."
+          fi
         continue-on-error: true
 
       - uses: softprops/action-gh-release@v2
@@ -112,7 +125,7 @@ jobs:
           files: |
             artifacts/*.zip
             artifacts/*.sha256
-            artifacts/**/_manifest/**
+            artifacts/*.spdx.json
           body: |
             ## Verifying your download
 
