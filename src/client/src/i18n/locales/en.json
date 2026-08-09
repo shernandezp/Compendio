@@ -199,7 +199,7 @@
     }
   },
   "search": {
-    "placeholder": "Search pages…",
+    "placeholder": "Search titles and content…",
     "results_one": "{{count}} result",
     "results_other": "{{count}} results",
     "noResults": "Nothing matched \"{{query}}\".",
@@ -208,6 +208,13 @@
     "filters": "You can use tag:, in:, owner:, lang: and updated:> in the search box.",
     "inLanguage": "in {{language}}",
     "indexRebuilding": "The search index is rebuilding. Results may be incomplete for a moment."
+  },
+  "help": {
+    "title": "Guide",
+    "forAdministrators": "For administrators",
+    "untranslated": "This topic has not been translated yet, so it is shown in English.",
+    "notFound": "That help topic does not exist.",
+    "empty": "The guide is not available on this instance."
   },
   "history": {
     "title": "History of {{title}}",

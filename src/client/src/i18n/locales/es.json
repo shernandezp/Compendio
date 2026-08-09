@@ -199,7 +199,7 @@
     }
   },
   "search": {
-    "placeholder": "Buscar páginas…",
+    "placeholder": "Buscar en títulos y contenido…",
     "results_one": "{{count}} resultado",
     "results_other": "{{count}} resultados",
     "noResults": "Nada coincide con «{{query}}».",
@@ -208,6 +208,13 @@
     "filters": "Puedes usar tag:, in:, owner:, lang: y updated:> en el cuadro de búsqueda.",
     "inLanguage": "en {{language}}",
     "indexRebuilding": "El índice de búsqueda se está reconstruyendo. Los resultados pueden estar incompletos un momento."
+  },
+  "help": {
+    "title": "Guía",
+    "forAdministrators": "Para administradores",
+    "untranslated": "Este tema todavía no está traducido, así que se muestra en inglés.",
+    "notFound": "Ese tema de la guía no existe.",
+    "empty": "La guía no está disponible en esta instancia."
   },
   "history": {
     "title": "Historial de {{title}}",

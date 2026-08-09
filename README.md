@@ -166,6 +166,10 @@ how to regenerate the committed API contract.
 
 ## Documentation
 
+**Users get their documentation inside the product**, under the **?** button in the header — how to
+navigate, search, write, and the lifecycle features, plus a section for administrators. It ships in
+every language the interface does. The files below are for whoever installs and maintains it.
+
 | | |
 |---|---|
 | [docs/install.md](docs/install.md) | The five-minute install, in detail, per platform |

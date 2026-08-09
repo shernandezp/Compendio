@@ -26,6 +26,7 @@ const StaleReportPage = lazy(() =>
   import('./features/lifecycle/StaleReportPage').then((m) => ({ default: m.StaleReportPage })));
 const AskWikiPage = lazy(() =>
   import('./features/ai/AskWikiPage').then((m) => ({ default: m.AskWikiPage })));
+const HelpPage = lazy(() => import('./features/help/HelpPage').then((m) => ({ default: m.HelpPage })));
 
 export function App() {
   const session = useQuery({ queryKey: ['session'], queryFn: api.session });
@@ -78,6 +79,9 @@ export function App() {
           <Route path="/history/*" element={<HistoryPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/tags" element={<TagBrowse />} />
+          {/* Both forms: /help lands on the first topic, /help/<slug> opens one directly. */}
+          <Route path="/help" element={<HelpPage />} />
+          <Route path="/help/:slug" element={<HelpPage />} />
           {/* Declared before /admin/* so the more specific route wins. */}
           <Route path="/admin/access/*" element={<AccessEditor />} />
           <Route path="/admin/*" element={<AdminPage />} />

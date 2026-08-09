@@ -259,6 +259,7 @@ public static class CompendioHost
         app.MapNotifications();
         app.MapAcknowledgments();
         app.MapAi();
+        app.MapHelp();
         app.MapAdmin();
 
         if (app.Environment.IsDevelopment())

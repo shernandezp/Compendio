@@ -179,6 +179,21 @@ export interface Paged<T> {
   pageSize: number;
 }
 
+/** `isFallback` means this topic has no version in the reader's language and is being shown in English. */
+export interface HelpTopic {
+  slug: string;
+  title: string;
+  isAdmin: boolean;
+  isFallback: boolean;
+}
+
+export interface HelpPage extends HelpTopic {
+  /** Sanitized server-side by the same renderer the wiki pages use. */
+  html: string;
+  language: string;
+  headings: { level: number; text: string; anchor: string }[];
+}
+
 export interface User {
   id: string;
   userName: string;
@@ -573,6 +588,14 @@ export const api = {
    * why the caller translates with the title as its own fallback.
    */
   templates: () => get<{ id: string; title: string; description?: string; content: string }[]>('/api/v1/templates'),
+
+  /**
+   * The built-in guide. The server filters the administrator topics and picks the language, so
+   * there is nothing to pass here — help follows the interface rather than drifting from it.
+   */
+  helpTopics: () => get<HelpTopic[]>('/api/v1/help'),
+  helpPage: (slug: string) => get<HelpPage>(`/api/v1/help/${encodeURIComponent(slug)}`),
+
   aiImprove: (path: string, text?: string, signal?: AbortSignal) =>
     post<AiProposal>('/api/v1/ai/improve', { path, text }, signal),
   aiSummarize: (path: string, text?: string, signal?: AbortSignal) =>

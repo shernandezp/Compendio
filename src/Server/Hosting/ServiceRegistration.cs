@@ -179,6 +179,9 @@ public static class ServiceRegistration
         services.AddSingleton<Application.Abstractions.IMarkdownRenderer, MarkdownRenderer>();
         services.AddSingleton<ITextExtractor, TextExtractor>();
 
+        // The guide is read out of the assembly once and never changes at runtime.
+        services.AddSingleton<Application.Abstractions.IHelpLibrary, Infrastructure.Help.HelpLibrary>();
+
         services.AddSingleton<IInstanceSettings, InstanceSettings>();
         services.AddSingleton<MasterKeyStore>();
         services.AddSingleton<ISecureScopeRegistry, SecureScopeRegistry>();

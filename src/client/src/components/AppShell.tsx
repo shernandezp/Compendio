@@ -14,7 +14,15 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
-import { IconMessageQuestion, IconMoon, IconSearch, IconSettings, IconSun, IconUser } from '@tabler/icons-react';
+import {
+  IconHelp,
+  IconMessageQuestion,
+  IconMoon,
+  IconSearch,
+  IconSettings,
+  IconSun,
+  IconUser,
+} from '@tabler/icons-react';
 
 import { api } from '../lib/api';
 import { changeLanguage, SUPPORTED_LANGUAGES } from '../i18n';
@@ -105,6 +113,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </ActionIcon>
               </Tooltip>
             )}
+
+            {/* Always present, unlike the AI control above it — the guide describes the product,
+                not an optional feature, and help that only some instances have is not help. */}
+            <Tooltip label={t('help.title')}>
+              <ActionIcon component={Link} to="/help" variant="subtle" aria-label={t('help.title')} onClick={close}>
+                <IconHelp size={18} />
+              </ActionIcon>
+            </Tooltip>
 
             <Tooltip label={t('app.theme.label')}>
               <ActionIcon

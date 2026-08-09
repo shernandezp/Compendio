@@ -24,7 +24,7 @@ and the procedures are in English with no way to say so.
 
 ## Adding a UI language
 
-Four files, and none of them is a component.
+Four files and one folder, and none of them is a component.
 
 ### 1. The client catalog
 
@@ -89,6 +89,37 @@ offered rather than half-working.
 **This one is not optional and its failure is silent.** A culture missing from that list is dropped
 from the build output entirely — which is how an instance configured for Catalan starts answering in
 English, in production, with no error anywhere.
+
+### 5. The built-in guide
+
+`src/Server/Resources/Help/` holds one folder per language, each with one Markdown file per topic:
+
+```
+src/Server/Resources/Help/
+  en/getting-started.md
+  es/getting-started.md
+  ca/getting-started.md
+```
+
+Copy `en/` to `<code>/` and translate. The files are picked up by a wildcard in the csproj, so
+there is nothing to register — a new folder is a new guide.
+
+Rules:
+
+- **File names are the slugs and must not change.** They are URLs (`/help/getting-started`) and
+  they are how a translated file is matched to its English original. Translate the contents, never
+  the file name.
+- **The first line is the title**, as a level-1 heading. It is lifted out and rendered as the page
+  heading, so do not repeat it in the body.
+- **The order and the administrator section live in
+  `src/Server/Application/Help/HelpCatalog.cs`**, not in the file names. A file with no catalog
+  entry is not shown, and logs a warning at startup.
+- **Partial translations are fine.** A topic with no file in your language falls back to English
+  and is labelled as untranslated in the interface. Missing documentation would be the worse
+  failure, so nothing is hidden.
+
+The guide should use the same words as the interface it describes. If a button says
+*Confirmar revisión*, the guide says *Confirmar revisión* — the locale catalog is the reference.
 
 ---
 

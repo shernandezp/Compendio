@@ -30,6 +30,15 @@
     <PackageReference Include="Common.Mediator" />
   </ItemGroup>
 
+  <!--
+    The built-in user guide. Embedded rather than copied to disk so that a single-file deployment
+    still has its documentation — a help button that 404s because somebody copied only the
+    executable is worse than no help button. A new language is a new folder here and nothing else.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Help\**\*.md" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="Compendio.Server.Tests" />
   </ItemGroup>
