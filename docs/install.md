@@ -21,48 +21,63 @@ download. If you want HTTPS, Compendio can issue its own certificate — see
 
 ## Windows
 
-### As an application
+### The installer
 
-1. Download `compendio-<version>-win-x64.zip` and unzip it somewhere, for example
-   `C:\Program Files\Compendio`.
+1. Download `compendio-<version>-win-x64.zip` and unzip it — anywhere except `Program Files`, for
+   example `C:\Compendio`.
 
-2. Verify the checksum against `SHA256SUMS.txt`:
-
-   ```powershell
-   Get-FileHash .\compendio-<version>-win-x64.zip -Algorithm SHA256
-   ```
-
-3. Run it:
+2. Right-click the Start button → **Terminal (Admin)**, then:
 
    ```powershell
-   .\compendio.exe
+   cd C:\Compendio
+   .\install-windows.ps1
    ```
 
-   **The first run shows "Windows protected your PC".** Click **More info → Run anyway**. Compendio
-   is not code-signed; the checksum you just verified is the substitute. See the README for why.
+The script is in the zip. It asks three questions — where the data should live, which port, and
+whether other computers should reach it — and every one has a default, so pressing Enter through it
+is a valid install. Then it registers the Windows Service, grants it the one permission it needs,
+opens the firewall if you said yes, starts it, waits until the wiki actually answers, and prints
+the address and the administrator password to sign in with.
 
-4. Open <http://localhost:8080>. The setup wizard starts with a language picker.
-
-### As a service
-
-From an **elevated** PowerShell prompt:
-
-```powershell
-.\compendio.exe install
-```
-
-The service runs as the virtual account `NT SERVICE\Compendio` — never as LocalSystem. It writes to
-its data directory and nothing else on the machine.
-
-If your data directory is not beside the executable, grant that account access to it:
+**Write that password down.** It is generated, shown once, and stored nowhere. If it is lost:
 
 ```powershell
-icacls "D:\CompendioData" /grant "NT SERVICE\Compendio:(OI)(CI)M" /T
+.\compendio.exe reset-admin-password --password "<a new one>"
 ```
 
-`deploy/install-windows-service.ps1` does both steps for you.
+Run the script again any time — it reuses an existing service, leaves an existing data folder
+alone, and never creates a second administrator.
 
-To remove it:
+For an unattended install:
+
+```powershell
+.\install-windows.ps1 -DataDir 'D:\CompendioData' -Port 8080 -OpenFirewall -Unattended
+```
+
+### Without installing anything
+
+To try it first, unzip and run it directly:
+
+```powershell
+.\compendio.exe
+```
+
+Then open <http://localhost:8080>. The setup wizard starts with a language picker and asks you to
+create the administrator yourself. Data lands in a `data` folder beside the executable. Closing the
+window stops it — that is what the service is for.
+
+**Windows may show "Windows protected your PC"** on a file downloaded through a browser. Click
+**More info → Run anyway**. Compendio is not code-signed; the checksum published beside the
+download is the substitute, and the README says why. The installer script clears this marker for
+you, so it only comes up on the direct-run path:
+
+```powershell
+$expected = (Get-Content .\compendio-<version>-win-x64.zip.sha256).Split(' ')[0]
+$actual   = (Get-FileHash .\compendio-<version>-win-x64.zip -Algorithm SHA256).Hash.ToLower()
+if ($expected -eq $actual) { 'OK' } else { 'MISMATCH — do not run it' }
+```
+
+### Removing it
 
 ```powershell
 .\compendio.exe uninstall
@@ -70,6 +85,13 @@ To remove it:
 
 **Uninstalling leaves your data untouched.** Your content folder, database and keys stay where they
 are.
+
+### Where the data goes
+
+Never inside `Program Files` — the service account cannot write there, and Compendio refuses to
+start rather than fail quietly later. The installer rejects that choice outright. Anywhere else is
+fine; a second drive is better. The service runs as the virtual account `NT SERVICE\Compendio`,
+never as LocalSystem, and writes to its data directory and nothing else on the machine.
 
 ### Logs
 
@@ -85,7 +107,7 @@ Event Viewer → Windows Logs → Application, source `Compendio`. Also as rolli
 ```bash
 sudo mkdir -p /opt/compendio
 sudo unzip compendio-<version>-linux-x64.zip -d /opt/compendio
-sha256sum -c SHA256SUMS.txt
+sha256sum -c compendio-<version>-linux-x64.zip.sha256
 sudo chmod +x /opt/compendio/compendio
 /opt/compendio/compendio
 ```

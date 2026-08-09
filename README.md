@@ -24,29 +24,33 @@ Licensed under **AGPL-3.0-or-later**.
 
 ### Windows
 
-1. Download `compendio-<version>-win-x64.zip` from the releases page and unzip it.
-2. **Verify the checksum** (see [Unsigned releases](#unsigned-releases) below):
+1. Download `compendio-<version>-win-x64.zip` from the releases page and unzip it to `C:\Compendio`.
+2. Right-click the Start button → **Terminal (Admin)**, then:
    ```powershell
-   Get-FileHash .\compendio-<version>-win-x64.zip -Algorithm SHA256
+   cd C:\Compendio
+   .\install-windows.ps1
    ```
-   Compare it with `SHA256SUMS.txt` beside the download.
-3. Run it:
-   ```powershell
-   .\compendio.exe
-   ```
-4. Open <http://localhost:8080> and follow the wizard.
 
-To run it as a service instead, from an elevated prompt:
+The installer is in the zip. Three questions, all with defaults; it registers the service, opens
+the firewall if you want it, starts everything and prints the address and the administrator
+password. **Write the password down** — it is shown once.
+
+To try it without installing anything, run `.\compendio.exe` and open <http://localhost:8080>.
+That path asks you to create the administrator yourself, and stops when you close the window.
+
+Verifying the download is worthwhile, since the binaries are unsigned — see
+[Unsigned releases](#unsigned-releases):
 
 ```powershell
-.\compendio.exe install
+$expected = (Get-Content .\compendio-<version>-win-x64.zip.sha256).Split(' ')[0]
+(Get-FileHash .\compendio-<version>-win-x64.zip -Algorithm SHA256).Hash.ToLower() -eq $expected
 ```
 
 ### Ubuntu / Debian
 
 ```bash
 unzip compendio-<version>-linux-x64.zip -d /opt/compendio
-sha256sum -c SHA256SUMS.txt
+sha256sum -c compendio-<version>-linux-x64.zip.sha256
 chmod +x /opt/compendio/compendio
 /opt/compendio/compendio
 ```

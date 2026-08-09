@@ -63,6 +63,13 @@ jobs:
             -p:SkipClientBuild=true \
             -p:Version="$VERSION"
 
+      # The installer has to be inside the download. Telling somebody to unzip one thing and then
+      # go and find a script in a repository is the install experience this script exists to end.
+      - name: Include the installer
+        if: matrix.runtime == 'win-x64'
+        shell: bash
+        run: cp deploy/install-windows.ps1 artifacts/win-x64/
+
       - name: Archive and checksum
         shell: bash
         run: |
