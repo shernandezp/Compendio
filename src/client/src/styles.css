@@ -86,8 +86,37 @@
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
 }
 
+/*
+  A preview, scaled and never cropped or stretched. Both constraints are maxima and the height is
+  auto, so the browser scales by the same factor in both axes — a 4000 px screenshot and a portrait
+  photo of a serial-number label both come down to something that sits inside the text instead of
+  taking the page over. The original is a click away; see .compendio-zoomable below.
+*/
 .compendio-content img {
   max-inline-size: 100%;
+  max-block-size: 70vh;
+  block-size: auto;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.compendio-content img.compendio-zoomable {
+  cursor: zoom-in;
+}
+
+/* The marker the editor leaves where a pasted image will land, while it uploads. */
+.compendio-uploading {
+  font-size: var(--mantine-font-size-sm);
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
+  font-style: italic;
+}
+
+.compendio-lightbox-image {
+  display: block;
+  margin-inline: auto;
+  /* Fits the viewport with the modal's own chrome allowed for; larger than this and the link to the
+     file itself is the honest answer rather than a scrollbar inside a dialog. */
+  max-inline-size: min(88vw, 1600px);
+  max-block-size: 78vh;
   block-size: auto;
 }
 

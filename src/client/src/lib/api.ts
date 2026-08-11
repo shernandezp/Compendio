@@ -634,4 +634,9 @@ export const api = {
     form.append('file', file);
     return request<{ path: string; name: string }>('/api/v1/attachments', { method: 'POST', body: form });
   },
+  /**
+   * Removes the file. Whatever points at it is the caller's problem to have dealt with first — see
+   * `removeImageReferences`, which is why the page is saved before this is called.
+   */
+  deleteAttachment: (path: string) => del<void>(`/api/v1/attachments/${encodePath(path)}`),
 };

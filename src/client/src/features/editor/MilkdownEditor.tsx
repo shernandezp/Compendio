@@ -2,8 +2,8 @@ import { useEffect, useImperativeHandle, useRef, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box } from '@mantine/core';
 
-import { api, encodePath } from '../../lib/api';
 import { splitFrontMatter } from '../../lib/markdown/canonical';
+import { createImageUploader } from './imageUpload';
 
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
@@ -166,14 +166,18 @@ export function MilkdownEditor({
         return;
       }
 
-      const [{ Crepe }, core, model] = await Promise.all([
+      const [{ Crepe }, core, model, view, { uploadConfig }] = await Promise.all([
         import('@milkdown/crepe'),
         import('@milkdown/kit/core'),
         import('@milkdown/kit/prose/model'),
+        import('@milkdown/kit/prose/view'),
+        import('@milkdown/kit/plugin/upload'),
       ]);
 
       const split = splitFrontMatter(value);
       frontMatter.current = split.frontMatter;
+
+      const { uploadImage, uploader } = createImageUploader({ pagePath, t });
 
       const instance = new Crepe({
         root: host.current,
@@ -215,20 +219,98 @@ export function MilkdownEditor({
               })),
             ],
           },
-          [Crepe.Feature.ImageBlock]: {
-            // An image pasted or dropped is uploaded and inserted. That is how real content
-            // arrives, and it is the difference between "attach a photo of the serial number" and
-            // "email it to yourself first".
-            onUpload: async (file: File) => {
-              if (!pagePath) {
-                return '';
-              }
-
-              const uploaded = await api.uploadAttachment(pagePath, file);
-              return `/api/v1/attachments/${encodePath(uploaded.path)}`;
+          // The "/" menu, whose labels are English literals like the top bar's — and which is the
+          // route the guide names for inserting an image. Every label but the three group headings
+          // already exists for the toolbar, so this is the same wording in both places.
+          //
+          // Only the items Crepe actually shows are listed: Latex is off, so its menu entry is gone
+          // by the feature flag rather than by a label here.
+          [Crepe.Feature.BlockEdit]: {
+            textGroup: {
+              label: t('editor.menu.text'),
+              text: { label: t('editor.toolbar.normalText') },
+              h1: { label: t('editor.toolbar.headingLevel', { level: 1 }) },
+              h2: { label: t('editor.toolbar.headingLevel', { level: 2 }) },
+              h3: { label: t('editor.toolbar.headingLevel', { level: 3 }) },
+              h4: { label: t('editor.toolbar.headingLevel', { level: 4 }) },
+              h5: { label: t('editor.toolbar.headingLevel', { level: 5 }) },
+              h6: { label: t('editor.toolbar.headingLevel', { level: 6 }) },
+              quote: { label: t('editor.toolbar.quote') },
+              divider: { label: t('editor.toolbar.divider') },
+            },
+            listGroup: {
+              label: t('editor.menu.list'),
+              bulletList: { label: t('editor.toolbar.bulletList') },
+              orderedList: { label: t('editor.toolbar.orderedList') },
+              taskList: { label: t('editor.toolbar.taskList') },
+            },
+            advancedGroup: {
+              label: t('editor.menu.advanced'),
+              image: { label: t('editor.toolbar.image') },
+              codeBlock: { label: t('editor.toolbar.codeBlock') },
+              table: { label: t('editor.toolbar.table') },
             },
           },
+          [Crepe.Feature.ImageBlock]: {
+            // The image block's own file picker. Paste and drop are handled separately, below.
+            //
+            // An empty string is Milkdown's "nothing was chosen" — the placeholder stays and no
+            // image node is written. Every path out of `uploadImage` has already explained itself.
+            onUpload: async (file: File) => (await uploadImage(file)) ?? '',
+
+            // Crepe's defaults here are English literals, like the top bar's. Left alone, a Spanish
+            // instance shows "Upload file" and "Write Image Caption" inside the image block.
+            blockUploadButton: t('editor.image.uploadButton'),
+            inlineUploadButton: t('editor.image.uploadButton'),
+            blockUploadPlaceholderText: t('editor.image.orPasteLink'),
+            inlineUploadPlaceholderText: t('editor.image.orPasteLink'),
+            blockCaptionPlaceholderText: t('editor.image.caption'),
+            blockConfirmButton: t('editor.image.confirm'),
+            inlineConfirmButton: t('editor.image.confirm'),
+          },
         },
+      });
+
+      /**
+       * What a pasted or dropped image becomes.
+       *
+       * @remarks
+       * <p>
+       * Crepe registers the upload plugin itself, so the gesture already worked — this replaces the
+       * *uploader* it registers with it, for two reasons that both write to the file.
+       * </p>
+       * <p>
+       * <strong>A refused upload must not leave a node behind.</strong> Crepe's uploader passes
+       * whatever `onUpload` returns straight into `createAndFill({ src })` without looking at it, so
+       * a rejected file — too large, wrong type, read-only folder — inserts an image with an empty
+       * `src`. That saves into the page and stays there.
+       * </p>
+       * <p>
+       * <strong>And alt text should be alt text.</strong> Crepe builds its own image block, whose
+       * alt slot carries the block's display ratio: pasting a screenshot would write
+       * `![1.00](…)` into a file whose whole promise is being readable in VS Code. The inline image
+       * node takes the same URL and puts the file name where a reader expects a description.
+       * </p>
+       * <p>
+       * `enableHtmlFileUploader` is left off, as Crepe leaves it: a paste that also carries HTML —
+       * from Word, Outlook or a web page — keeps going down the conversion path instead of being
+       * swallowed as a file upload. That paste is a headline feature and outranks this one.
+       * </p>
+       */
+      instance.editor.config((ctx) => {
+        // No `.use(upload)` here: the plugin is already part of Crepe, and registering the same one
+        // twice would put two paste handlers on the same editor.
+        ctx.update(uploadConfig.key, (previous) => ({
+          ...previous,
+          uploader,
+          uploadWidgetFactory: (pos: number, spec: Parameters<typeof view.Decoration.widget>[2]) => {
+            const placeholder = document.createElement('span');
+            placeholder.className = 'compendio-uploading';
+            placeholder.textContent = t('editor.image.uploading');
+
+            return view.Decoration.widget(pos, placeholder, spec);
+          },
+        }));
       });
 
       instance.on((listener) => {

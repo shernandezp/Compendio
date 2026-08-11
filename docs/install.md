@@ -23,15 +23,32 @@ download. If you want HTTPS, Compendio can issue its own certificate — see
 
 ### The installer
 
-1. Download `compendio-<version>-win-x64.zip` and unzip it — anywhere except `Program Files`, for
-   example `C:\Compendio`.
+1. Download `compendio-<version>-win-x64.zip`, then **unblock it before unzipping** and unzip it
+   anywhere except `Program Files`:
+
+   ```powershell
+   Unblock-File .\compendio-<version>-win-x64.zip
+   Expand-Archive .\compendio-<version>-win-x64.zip -DestinationPath C:\Compendio
+   ```
+
+   Unblocking the zip first matters: files extracted from a zip downloaded through a browser
+   inherit its Mark of the Web, and Windows Server's default `RemoteSigned` execution policy
+   refuses to run an unsigned script that carries it.
 
 2. Right-click the Start button → **Terminal (Admin)**, then:
 
    ```powershell
    cd C:\Compendio
-   .\install-windows.ps1
+   powershell -ExecutionPolicy Bypass -File .\install-windows.ps1
    ```
+
+   `-ExecutionPolicy Bypass` applies to that one command and changes nothing about the machine. It
+   is written this way because it works whether or not step 1 was done.
+
+   > **If that is still refused**, the execution policy comes from group policy rather than the
+   > machine. `Get-ExecutionPolicy -List` shows where: if `MachinePolicy` or `UserPolicy` is set,
+   > `-ExecutionPolicy` is ignored, and the script has to be unblocked
+   > (`Unblock-File .\install-windows.ps1`) or the policy relaxed.
 
 The script is in the zip. It asks three questions — where the data should live, which port, and
 whether other computers should reach it — and every one has a default, so pressing Enter through it
@@ -51,7 +68,7 @@ alone, and never creates a second administrator.
 For an unattended install:
 
 ```powershell
-.\install-windows.ps1 -DataDir 'D:\CompendioData' -Port 8080 -OpenFirewall -Unattended
+powershell -ExecutionPolicy Bypass -File .\install-windows.ps1 -DataDir 'D:\CompendioData' -Port 8080 -OpenFirewall -Unattended
 ```
 
 ### Without installing anything

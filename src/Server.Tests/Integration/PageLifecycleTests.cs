@@ -150,6 +150,74 @@ public sealed class PageLifecycleTests(CompendioApplication app)
         tree.ShouldNotContain("assets");
     }
 
+    /// <summary>
+    /// Deleting an attachment takes the images that showed it out of the page.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Otherwise the reader who deleted a picture is left looking at a broken-image icon, which is
+    /// not what they asked for and is worse than what they had. The two halves are one request for
+    /// exactly that reason.
+    /// </para>
+    /// <para>
+    /// The <c>machineTranslated</c> assertion is the other half of the decision: this is not a
+    /// human reviewing a translation, so the flag that says nobody has must survive. Routing this
+    /// through <c>SavePage</c> — the obvious implementation — strips it, and a Spanish page would
+    /// quietly lose its "unreviewed" banner because somebody deleted a photo.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task DeletingAnAttachmentAlsoRemovesItFromThePage()
+    {
+        var client = await app.SignInAsAdminAsync();
+
+        var created = await CreateAsync(
+            client,
+            "Fotos",
+            "Con imagen",
+            "---\nmachineTranslated: true\n---\n\nAntes.\n\nDespués.\n");
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent(created.Path), "pagePath");
+
+        var png = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
+
+        var image = new ByteArrayContent(png);
+        image.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        form.Add(image, "file", "rack.png");
+
+        var upload = await client.PostAsync("/api/v1/attachments", form, Ct);
+        upload.StatusCode.ShouldBe(HttpStatusCode.OK, await upload.Content.ReadAsStringAsync(Ct));
+
+        var attachment = await upload.Content.ReadFromJsonAsync<JsonElement>(Json, Ct);
+        var attachmentPath = attachment.GetProperty("path").GetString()!;
+
+        // Written to the folder rather than through the save endpoint, because a save is a human
+        // editing the page and would clear `machineTranslated` before this test could look at it —
+        // which is the very behaviour being asserted below.
+        await app.WriteFileAsync(
+            created.Path,
+            $"---\nmachineTranslated: true\n---\n\nAntes.\n\n![1.00](/api/v1/attachments/{attachmentPath})\n\nDespués.\n");
+
+        var deleted = await client.DeleteAsync($"/api/v1/attachments/{attachmentPath}", Ct);
+        deleted.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var file = app.ReadFile(created.Path);
+
+        file.ShouldNotContain("rack.png");
+        file.ShouldContain("Antes.");
+        file.ShouldContain("Después.");
+
+        // The picture's paragraph closed up rather than leaving a two-line hole.
+        file.ShouldContain("Antes.\n\nDespués.");
+
+        // Not a human reviewing the translation. The flag stays.
+        file.ShouldContain("machineTranslated: true");
+
+        app.FileExists(attachmentPath).ShouldBeFalse();
+    }
+
     [Fact]
     public async Task SavingRequiresTheHashTheCallerRead()
     {

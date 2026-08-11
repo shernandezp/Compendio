@@ -116,9 +116,27 @@ public sealed class UploadAttachmentHandler(
 
 public sealed record DeleteAttachmentCommand(string Path) : ICommand<Unit>;
 
+/// <summary>
+/// Deletes an attachment, and stops its page from showing it.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Both halves, in one request. Deleting only the file leaves the page rendering a broken image,
+/// which is a worse outcome than the one that was asked for; deleting only the reference leaves a
+/// byte the folder carries forever. Doing it here rather than in the client also makes the order
+/// safe: the page is written first, and a conflict on that write aborts before anything is lost.
+/// </para>
+/// <para>
+/// The page is written through the store rather than through <c>SavePage</c>, for the same reason
+/// the checkbox toggle is: <c>SavePage</c> is a human editing the page, and it carries the rules
+/// that go with that — it strips the <c>machineTranslated</c> flag, which would quietly tell every
+/// future reader that an unreviewed translation had been reviewed.
+/// </para>
+/// </remarks>
 public sealed class DeleteAttachmentHandler(
     ICompendioDbContext db,
     IContentStore store,
+    IContentPipeline pipeline,
     IPathPolicy paths,
     IPermissionEvaluator permissions,
     ICurrentUser currentUser) : IRequestHandler<DeleteAttachmentCommand, Unit>
@@ -128,10 +146,61 @@ public sealed class DeleteAttachmentHandler(
         var path = paths.Require(request.Path, PathKind.Attachment);
         await permissions.RequireWriteAsync(currentUser.Subject, path, cancellationToken);
 
+        var attachment = await db.Attachments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Path == path.Value, cancellationToken);
+
+        if (attachment is not null)
+        {
+            await RemoveFromPageAsync(attachment.PageId, path, cancellationToken);
+        }
+
         await store.DeleteAsync(path, cancellationToken);
         await db.Attachments.Where(a => a.Path == path.Value).ExecuteDeleteAsync(cancellationToken);
 
         return Unit.Value;
+    }
+
+    /// <summary>
+    /// Removes the images that pointed at this file from the page that owns it.
+    /// </summary>
+    /// <remarks>
+    /// The owning page only. <c>assets/</c> is shared by the folder, so another page there could in
+    /// principle embed the same file — but the row is what says whose attachment it is, and that is
+    /// the page the reader deleted it from.
+    /// </remarks>
+    private async Task RemoveFromPageAsync(Guid pageId, ContentPath attachment, CancellationToken cancellationToken)
+    {
+        var page = await db.Pages.AsNoTracking().FirstOrDefaultAsync(p => p.Id == pageId, cancellationToken);
+
+        if (page is null)
+        {
+            return;
+        }
+
+        var pagePath = ContentPath.FromTrusted(page.Path);
+        var file = await store.ReadAsync(pagePath, cancellationToken);
+
+        if (file is null)
+        {
+            return;
+        }
+
+        var updated = MarkdownImages.RemoveReferencesTo(file.Text, MarkdownImages.UrlFor(attachment));
+
+        if (updated == file.Text)
+        {
+            return;
+        }
+
+        // The hash the file was just read at: a page edited between that read and this write comes
+        // back as a conflict rather than losing the edit, and nothing has been deleted yet.
+        await store.WriteAsync(pagePath, MarkdownImages.ToBytes(updated), file.ContentHash, cancellationToken);
+
+        // Syncs the database from bytes already on disk — history, the page row, the index queue.
+        // No note: the version is an ordinary edit by whoever pressed delete, and a server-authored
+        // one would be an English sentence in a Spanish instance's history.
+        await pipeline.RecordSavedAsync(pagePath, currentUser.UserId, note: null, cancellationToken);
     }
 }
 

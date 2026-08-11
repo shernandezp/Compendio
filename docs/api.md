@@ -159,10 +159,16 @@ Deleting a folder needs `manage`, not `write`: `write` is for the contents.
 |---|---|
 | `GET /attachments/{*path}` | An **authorized endpoint**, never a static file. `Cache-Control: no-store` and no `ETag` — an ETag derived from plaintext would let a cache confirm the contents of an encrypted file to somebody who cannot read it. |
 | `POST /attachments` | `multipart/form-data` with `pagePath` and `file`. |
-| `DELETE /attachments/{*path}` | |
+| `DELETE /attachments/{*path}` | Removes the images that showed the file from its page, then deletes the file. The page is read and rewritten inside the request, so a caller holding an old copy is not a conflict; a concurrent save is, and then nothing is deleted. |
 
 Uploads are checked against an extension allowlist **and** content-type sniffing, both. Images are
 served inline; everything else gets `Content-Disposition: attachment`.
+
+The delete is one request because the two halves must not come apart: a file deleted without its
+references leaves the page rendering a broken image. It edits the page through the store rather
+than through `PUT /pages`, so it is not treated as a human revising the text — in particular, a
+machine-translated page keeps its unreviewed flag. Links to the file are left alone; a sentence
+somebody wrote is not ours to delete.
 
 ### Search
 

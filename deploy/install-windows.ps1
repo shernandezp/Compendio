@@ -15,7 +15,7 @@
     instance that already has an administrator is never given a second one.
 
 .PARAMETER DataDir
-    Where pages, database, logs and keys live. Never put this inside Program Files — the service
+    Where pages, database, logs and keys live. Never put this inside Program Files -- the service
     account cannot write there and Compendio will refuse to start rather than fail quietly later.
 
 .PARAMETER Port
@@ -35,7 +35,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$InstallPath = $PSScriptRoot,
+    [string]$InstallPath,
     [string]$DataDir,
     [int]$Port = 8080,
     [switch]$OpenFirewall,
@@ -46,13 +46,33 @@ $ErrorActionPreference = 'Stop'
 
 # PowerShell 7.4 turns a non-zero exit from a native command into a terminating error by default,
 # 5.1 never does. Both are in the field on Windows Server, so the difference is switched off and
-# every native call below checks $LASTEXITCODE itself — one behaviour on both.
+# every native call below checks $LASTEXITCODE itself -- one behaviour on both.
 if (Test-Path variable:PSNativeCommandUseErrorActionPreference) {
     $PSNativeCommandUseErrorActionPreference = $false
 }
 
 $ServiceName = 'Compendio'
 $ServiceAccount = 'NT SERVICE\Compendio'
+
+<#
+    Where the script is, resolved the long way round.
+
+    $PSScriptRoot is not dependable as a param() default -- it is empty under some invocations, and
+    an empty string reaches Join-Path as a binding error rather than as a useful message. Each
+    fallback below covers a way this script actually gets started: dot-sourced, piped through
+    -File, or run from the folder it lives in.
+#>
+if (-not $InstallPath) {
+    $InstallPath = $PSScriptRoot
+}
+
+if (-not $InstallPath -and $MyInvocation.MyCommand.Path) {
+    $InstallPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+
+if (-not $InstallPath) {
+    $InstallPath = (Get-Location).Path
+}
 
 function Write-Step { param([string]$Text) Write-Host "`n$Text" -ForegroundColor Cyan }
 function Write-Ok { param([string]$Text) Write-Host "  $Text" -ForegroundColor Green }
@@ -82,12 +102,17 @@ function Read-YesNo {
 
 <#
     A password a person has to read off a console and type into a browser once. Ambiguous
-    characters are left out on purpose — nobody should lose ten minutes to an l that was a 1.
+    characters are left out on purpose -- nobody should lose ten minutes to an l that was a 1.
 #>
 function New-Password {
     $alphabet = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'.ToCharArray()
     $bytes = [byte[]]::new(24)
-    [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+
+    # Create().GetBytes() rather than the tidier Fill(): Fill() is .NET Core only, and Windows
+    # PowerShell 5.1 -- the default shell on every Windows Server -- runs on .NET Framework, where
+    # it does not exist. This pair works on both.
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
 
     return -join ($bytes | ForEach-Object { $alphabet[$_ % $alphabet.Length] })
 }
@@ -95,8 +120,8 @@ function New-Password {
 # ---------------------------------------------------------------------------------------------
 
 Write-Host ''
-Write-Host '  Compendio — Windows installer' -ForegroundColor White
-Write-Host '  ─────────────────────────────' -ForegroundColor DarkGray
+Write-Host '  Compendio -- Windows installer' -ForegroundColor White
+Write-Host '  -----------------------------' -ForegroundColor DarkGray
 
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
         ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -112,6 +137,26 @@ if (-not (Test-Path $executable)) {
     Write-Host ''
     Write-Host "  compendio.exe is not in '$InstallPath'." -ForegroundColor Red
     Write-Host '  Put this script in the folder you unzipped, or pass -InstallPath.' -ForegroundColor Red
+    Write-Host ''
+    exit 1
+}
+
+<#
+    A user profile is the wrong home for a service.
+
+    NT SERVICE\Compendio cannot read another account's profile, so the service fails to start with
+    nothing more useful than "Cannot start service Compendio on computer '.'". Documents is also
+    the folder most likely to be redirected or OneDrive-synced, neither of which a service
+    survives. Caught here rather than left to be diagnosed from an event log.
+#>
+if ($InstallPath -like "$env:SystemDrive\Users\*") {
+    Write-Host ''
+    Write-Host "  Compendio is installed under a user profile:" -ForegroundColor Red
+    Write-Host "    $InstallPath" -ForegroundColor Red
+    Write-Host ''
+    Write-Host '  The service account cannot read another user profile, so the service would not' -ForegroundColor Red
+    Write-Host '  start. Move the folder somewhere outside C:\Users -- C:\Compendio is a good' -ForegroundColor Red
+    Write-Host '  choice -- and run this again from there.' -ForegroundColor Red
     Write-Host ''
     exit 1
 }
@@ -198,7 +243,7 @@ if ($Port -ne 8080) {
     Compendio creates this from configuration at startup and only when no account exists at all,
     so re-running this script can never mint a second administrator or reset an existing one. The
     values are set as machine variables because that is the only channel the service reads at
-    start, and they are removed again as soon as the account exists — a password left in the
+    start, and they are removed again as soon as the account exists -- a password left in the
     registry is a password somebody finds a year later.
 #>
 $password = $null
@@ -212,7 +257,7 @@ if ($isFreshInstall) {
 $service = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 
 if ($service) {
-    Write-Note 'The service already exists — reusing it.'
+    Write-Note 'The service already exists -- reusing it.'
     if ($service.Status -eq 'Running') { Stop-Service -Name $ServiceName -Force }
 }
 else {
@@ -249,6 +294,67 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Ok "$ServiceAccount can write to $DataDir"
 
+# Read and execute on the program folder. Program Files grants this to Users already, but any
+# other location may not, and a service that cannot read its own executable fails to start with a
+# message that names nothing.
+$icaclsProgram = & icacls $InstallPath /grant "${ServiceAccount}:(OI)(CI)RX" /T 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ''
+    Write-Host "  Could not grant '$ServiceAccount' read access to '$InstallPath'." -ForegroundColor Red
+    Write-Host "  $icaclsProgram" -ForegroundColor Red
+    Write-Host ''
+    exit 1
+}
+
+Write-Ok "$ServiceAccount can read $InstallPath"
+
+<#
+    Where the single-file bundle unpacks itself.
+
+    These builds are published with compression enabled, so the executable extracts its native
+    libraries to a temporary folder on every start. A virtual service account has no profile and
+    therefore no dependable TEMP, which is the other way this service fails to start without
+    saying why. Pinning it inside the data folder removes the guesswork.
+#>
+$extractDir = Join-Path $DataDir 'bundle'
+New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+[Environment]::SetEnvironmentVariable('DOTNET_BUNDLE_EXTRACT_BASE_DIR', $extractDir, 'Machine')
+
+# Also in this process, so the warm-up below extracts to the same place the service will look.
+# Setting a machine variable does not change the environment of a process already running.
+$env:DOTNET_BUNDLE_EXTRACT_BASE_DIR = $extractDir
+
+<#
+    Unpack the bundle before the service is asked to start.
+
+    Windows gives a service 30 seconds to report that it is running, and that clock covers
+    everything: decompressing a ~100 MB single-file executable to disk, applying migrations,
+    building the search schema, and only then binding the port. Cold, that can overrun, and the
+    service is killed mid-startup -- which surfaces as a TaskCanceledException inside Kestrel's
+    BindAsync and tells the administrator nothing.
+
+    Running any command here does the expensive extraction once, as an ordinary process with no
+    time limit, into the directory the service account will read. Its own start then skips
+    straight to the cheap part. `doctor` is used because it also reports whether the install is
+    sound, which is worth knowing before the service is blamed for anything.
+#>
+Write-Step 'Checking the installation'
+
+$doctor = & $executable doctor 2>&1
+$doctorExit = $LASTEXITCODE
+
+# 0 clean, 2 findings, 1 the command itself failed.
+if ($doctorExit -eq 1) {
+    Write-Host ''
+    Write-Host '  Compendio could not check its own installation:' -ForegroundColor Red
+    Write-Host ''
+    $doctor | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
+    Write-Host ''
+    exit 1
+}
+
+Write-Ok 'Installation looks sound.'
+
 # --- Firewall rule ----------------------------------------------------------------------------
 
 if ($OpenFirewall) {
@@ -278,18 +384,41 @@ catch {
 }
 
 $address = "http://localhost:$Port"
+
+# Probed over 127.0.0.1 while the address shown to the user stays localhost, which is what they
+# type. The default binding is http://0.0.0.0:<port>, so IPv4 is the address that is definitely
+# listening; localhost resolves to ::1 first and reaches it only by falling back. That fallback
+# does work -- it costs about 8 ms -- so this is one less thing between the probe and an answer
+# rather than a fix for anything.
+$probe = "http://127.0.0.1:$Port/health"
 $ready = $false
 
-# Up to a minute: the very first start runs database migrations and builds the search schema.
-foreach ($attempt in 1..120) {
+# Up to 90 seconds: the very first start runs database migrations and builds the search schema.
+# It says so as it goes, because a silent prompt for a minute and a half reads as a hung script.
+Write-Host '  Waiting for it to answer' -NoNewline -ForegroundColor DarkGray
+
+foreach ($attempt in 1..60) {
+    # A service that has given up is not going to answer, and waiting out the full timeout to
+    # discover that helps nobody.
+    if ((Get-Service -Name $ServiceName).Status -ne 'Running') {
+        Write-Host ''
+        Write-Note 'The service stopped after starting.'
+        break
+    }
+
     try {
-        $response = Invoke-WebRequest -Uri "$address/health" -UseBasicParsing -TimeoutSec 2
+        $response = Invoke-WebRequest -Uri $probe -UseBasicParsing -TimeoutSec 2
         if ($response.StatusCode -eq 200) { $ready = $true; break }
     }
     catch {
-        Start-Sleep -Milliseconds 500
+        # Not yet: still migrating, still binding, or not coming up at all.
     }
+
+    Write-Host '.' -NoNewline -ForegroundColor DarkGray
+    Start-Sleep -Milliseconds 500
 }
+
+Write-Host ''
 
 # The password has done its job the moment the account exists. Clear it either way: on failure it
 # is equally undesirable to leave it behind, and the account will be created on the next start.
@@ -299,10 +428,22 @@ foreach ($attempt in 1..120) {
 if (-not $ready) {
     Write-Host ''
     Write-Host '  Compendio was installed but is not answering yet.' -ForegroundColor Yellow
-    Write-Host '  Check what it says about itself:' -ForegroundColor Yellow
+    Write-Host "  It may still be starting -- try $address in a browser." -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host '  If it does not load, check what it says about itself:' -ForegroundColor Yellow
     Write-Host ''
     Write-Host "    & '$executable' doctor" -ForegroundColor White
     Write-Host ''
+
+    if ($isFreshInstall -and $password) {
+        # Printed even on the unhappy path: the account exists as soon as the service starts once,
+        # and a password that is only ever shown on success is a password lost to a slow start.
+        Write-Host '  The administrator account was created with:' -ForegroundColor White
+        Write-Host '    User      admin' -ForegroundColor Yellow
+        Write-Host "    Password  $password" -ForegroundColor Yellow
+        Write-Host ''
+    }
+
     Write-Host '  Logs: Event Viewer -> Windows Logs -> Application, source "Compendio"' -ForegroundColor DarkGray
     Write-Host "        $DataDir\logs" -ForegroundColor DarkGray
     Write-Host ''
@@ -314,9 +455,9 @@ if (-not $ready) {
 $hostAddress = "http://$($env:COMPUTERNAME.ToLower()):$Port"
 
 Write-Host ''
-Write-Host '  ─────────────────────────────────────────────' -ForegroundColor DarkGray
+Write-Host '  ---------------------------------------------' -ForegroundColor DarkGray
 Write-Host '   Compendio is running.' -ForegroundColor Green
-Write-Host '  ─────────────────────────────────────────────' -ForegroundColor DarkGray
+Write-Host '  ---------------------------------------------' -ForegroundColor DarkGray
 Write-Host ''
 Write-Host "   On this machine:  $address" -ForegroundColor White
 
@@ -330,7 +471,7 @@ if ($isFreshInstall) {
     Write-Host '     User      admin' -ForegroundColor Yellow
     Write-Host "     Password  $password" -ForegroundColor Yellow
     Write-Host ''
-    Write-Host '   Write this down now — it is not stored anywhere and will not be' -ForegroundColor DarkGray
+    Write-Host '   Write this down now -- it is not stored anywhere and will not be' -ForegroundColor DarkGray
     Write-Host '   shown again. Change it under Profile once you are in.' -ForegroundColor DarkGray
     Write-Host ''
     Write-Host '   Forgotten it later?' -ForegroundColor DarkGray

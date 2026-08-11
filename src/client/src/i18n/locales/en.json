@@ -143,6 +143,19 @@
     "onlyAvailableIn": "This page is only available in {{language}}.",
     "attachments": "Attachments",
     "addAttachment": "Add a file",
+    "attachmentAdded": "File attached.",
+    "attachmentFailed": "The file could not be attached.",
+    "deleteAttachment": "Delete the file",
+    "deleteAttachmentNamed": "Delete \"{{name}}\"",
+    "deleteAttachmentConfirm": "Delete \"{{name}}\"? It is removed from this page and the file itself is deleted. The edit to the page is kept in its history, but the file cannot be restored from there.",
+    "attachmentDeleted": "File deleted.",
+    "attachmentDeleteFailed": "The file could not be deleted.",
+    "attachmentDeleteConflict": "The page was being saved at that moment, so nothing has been deleted. Try again.",
+    "image": "Image",
+    "imageZoom": "Show this image at full size",
+    "imageZoomNamed": "Show \"{{name}}\" at full size",
+    "imageDimensions": "{{width}} × {{height}} px",
+    "imageOriginal": "Open the original",
     "secure": "Encrypted folder",
     "secureHint": "Anyone with read access can read this page. Only administrators can change it.",
     "notCanonical": "This page was written outside Compendio. The first save here will tidy its formatting once.",
@@ -165,6 +178,16 @@
     "discardDraft": "Discard the draft",
     "saveFailed": "Could not save. Your text is still here — try again.",
     "saveForbidden": "You do not have permission to save here. Your text is still here — ask an administrator for write access to this folder.",
+    "image": {
+      "uploading": "Attaching the image…",
+      "uploadButton": "Choose an image",
+      "orPasteLink": "or paste a link",
+      "caption": "Write a caption",
+      "confirm": "Confirm",
+      "needsSave": "Save the page first, then images can be attached to it.",
+      "failed": "The image could not be attached.",
+      "onlyImages": "Only images can be dropped into the text. Use \"Add a file\" on the page for anything else."
+    },
     "conflict": {
       "title": "This page changed while you were editing",
       "explain": "Somebody else — or an edit made in the content folder — saved after you opened this page. Nothing is lost. Choose what to keep.",
@@ -174,6 +197,11 @@
       "takeTheirs": "Keep theirs",
       "resolveOnDesktop": "Merging needs a wider screen. Open this page on a computer to resolve it.",
       "resolved": "Merged and saved."
+    },
+    "menu": {
+      "text": "Text",
+      "list": "List",
+      "advanced": "Advanced"
     },
     "toolbar": {
       "normalText": "Normal text",

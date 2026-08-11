@@ -35,10 +35,28 @@ el texto, usa **Pegar sin formato**.
 Escribe `[[` y empieza a teclear el nombre de una página. Solo se sugieren las que puedes leer, y el
 enlace sigue siendo válido si después se mueve o se renombra la página de destino.
 
-### Adjuntos
+### Imágenes
 
-**Añadir un archivo** adjunta un documento, una imagen o un comprimido a la página. Los nombres de
-los adjuntos se pueden buscar.
+Pega una captura directamente en el texto —**Win+Mayús+S** y luego **Ctrl-V**— o arrastra un archivo
+de imagen sobre la página. En ambos casos se sube y se adjunta a la página, no se incrusta en el
+archivo, así que el Markdown sigue siendo legible. Con **/** y **Imagen** consigues lo mismo desde un
+selector de archivos, y además puedes ponerle un pie.
+
+Una página tiene que estar guardada antes de poder llevar adjuntos: en una página nueva, escribe algo
+y pulsa **Guardar** primero.
+
+Quien la lea verá la imagen ajustada al texto y podrá hacer clic para verla a tamaño completo.
+
+### Otros archivos
+
+**Añadir un archivo**, en el panel *Adjuntos* que hay junto a la página, adjunta un documento, una
+hoja de cálculo o un comprimido. Los nombres de los adjuntos se pueden buscar. Qué tipos de archivo
+se admiten lo decide un administrador; cualquier otro se rechaza con un mensaje que lo explica.
+
+Desde ese mismo panel se eliminan, y también desde la vista ampliada de una imagen. Al eliminar, la
+imagen se quita además de la página, así que no queda nada apuntando a un archivo que ya no existe.
+Un enlace a un adjunto que hayas escrito tú se queda tal cual: si añadiste uno, revisa la página
+después de eliminar.
 
 ## Guardar
 

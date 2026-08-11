@@ -143,6 +143,19 @@
     "onlyAvailableIn": "Esta página solo está disponible en {{language}}.",
     "attachments": "Adjuntos",
     "addAttachment": "Añadir un archivo",
+    "attachmentAdded": "Archivo adjuntado.",
+    "attachmentFailed": "No se ha podido adjuntar el archivo.",
+    "deleteAttachment": "Eliminar el archivo",
+    "deleteAttachmentNamed": "Eliminar «{{name}}»",
+    "deleteAttachmentConfirm": "¿Eliminar «{{name}}»? Se quita de esta página y se borra el archivo. La edición de la página queda en su historial, pero el archivo no se puede restaurar desde ahí.",
+    "attachmentDeleted": "Archivo eliminado.",
+    "attachmentDeleteFailed": "No se ha podido eliminar el archivo.",
+    "attachmentDeleteConflict": "La página se estaba guardando justo en ese momento, así que no se ha eliminado nada. Inténtalo otra vez.",
+    "image": "Imagen",
+    "imageZoom": "Ver esta imagen a tamaño completo",
+    "imageZoomNamed": "Ver «{{name}}» a tamaño completo",
+    "imageDimensions": "{{width}} × {{height}} px",
+    "imageOriginal": "Abrir el original",
     "secure": "Carpeta cifrada",
     "secureHint": "Cualquiera con acceso de lectura puede leer esta página. Solo los administradores pueden modificarla.",
     "notCanonical": "Esta página se escribió fuera de Compendio. Al guardarla aquí por primera vez se ordenará su formato, una sola vez.",
@@ -165,6 +178,16 @@
     "discardDraft": "Descartar el borrador",
     "saveFailed": "No se pudo guardar. Tu texto sigue aquí: inténtalo de nuevo.",
     "saveForbidden": "No tienes permiso para guardar aquí. Tu texto sigue aquí: pide a un administrador acceso de escritura a esta carpeta.",
+    "image": {
+      "uploading": "Adjuntando la imagen…",
+      "uploadButton": "Elegir una imagen",
+      "orPasteLink": "o pega un enlace",
+      "caption": "Escribe un pie de imagen",
+      "confirm": "Confirmar",
+      "needsSave": "Guarda la página primero; después podrás adjuntarle imágenes.",
+      "failed": "No se ha podido adjuntar la imagen.",
+      "onlyImages": "En el texto solo se pueden soltar imágenes. Para lo demás usa «Añadir un archivo» en la página."
+    },
     "conflict": {
       "title": "Esta página cambió mientras la editabas",
       "explain": "Otra persona —o una edición hecha en la carpeta de contenido— guardó después de que abrieras esta página. No se ha perdido nada. Elige qué conservar.",
@@ -174,6 +197,11 @@
       "takeTheirs": "Quedarme con la suya",
       "resolveOnDesktop": "Combinar necesita una pantalla más ancha. Abre esta página en un ordenador para resolverlo.",
       "resolved": "Combinada y guardada."
+    },
+    "menu": {
+      "text": "Texto",
+      "list": "Listas",
+      "advanced": "Avanzado"
     },
     "toolbar": {
       "normalText": "Texto normal",

@@ -35,10 +35,27 @@ without any of that, use **Paste without formatting**.
 Type `[[` and start typing a page name. Only pages you can read are suggested, and the link stays
 valid if the target page is later moved or renamed.
 
-### Attachments
+### Images
 
-**Add a file** attaches a document, image or archive to the page. Attachment file names are
-searchable.
+Paste a screenshot straight into the text — **Win+Shift+S**, then **Ctrl-V** — or drag an image file
+onto the page. Either way it is uploaded and attached to the page, not embedded in the file, so the
+Markdown stays readable. **/** then **Image** does the same through a file picker, and lets you give
+the image a caption.
+
+A page has to be saved once before it can hold attachments, so on a brand new page write something
+and press **Save** first.
+
+Readers see the image scaled to fit the text and can click it to see it full size.
+
+### Other files
+
+**Add a file**, in the *Attachments* panel beside a page, attaches a document, spreadsheet or
+archive. Attachment file names are searchable. Which file types are allowed is an administrator's
+setting; anything else is refused with a message saying so.
+
+The same panel deletes them, and so does the enlarged view of an image. Deleting also takes the
+picture out of the page, so nothing is left pointing at a file that is gone. A link you typed to an
+attachment is left as you wrote it — check the page after deleting if you added one.
 
 ## Saving
 

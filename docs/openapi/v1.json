@@ -1855,6 +1855,43 @@
         ]
       }
     },
+    "/api/v1/help": {
+      "get": {
+        "operationId": "GetHelpTopics",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "The guide's table of contents, filtered to what this person can act on.",
+        "tags": [
+          "Help"
+        ]
+      }
+    },
+    "/api/v1/help/{slug}": {
+      "get": {
+        "operationId": "GetHelpPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Help"
+        ]
+      }
+    },
     "/api/v1/languages": {
       "get": {
         "operationId": "GetLanguages",
@@ -2654,6 +2691,9 @@
     },
     {
       "name": "AI"
+    },
+    {
+      "name": "Help"
     },
     {
       "name": "Admin"

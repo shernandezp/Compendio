@@ -35,6 +35,21 @@ Las casillas de una página se pueden marcar. Al marcarlas se guarda al momento 
 historial como cualquier otra edición: práctico para un runbook que estás siguiendo, pero ten en
 cuenta que todo el mundo ve las mismas casillas.
 
+## Imágenes
+
+Una imagen dentro de una página se muestra ajustada al ancho del texto, con sus proporciones
+originales. Haz clic en ella —o selecciónala con el teclado y pulsa **Intro**— para verla tan grande
+como permita tu pantalla, con un enlace al archivo si el original es aún mayor.
+
+Una imagen que además es un enlace abre el enlace, que es lo que quiso su autor.
+
+Si puedes editar la página, la vista ampliada ofrece también **Eliminar el archivo**: quita la
+imagen de la página *y* borra el archivo adjunto, en un solo paso, después de pedirte confirmación.
+
+El cambio en la página queda en su historial como cualquier otro, **pero el archivo ya no está**: el
+historial guarda versiones de páginas, no de adjuntos. Restaurar una versión anterior devuelve la
+línea de la imagen sin nada detrás, así que una imagen eliminada hay que volver a adjuntarla.
+
 ## Diagramas
 
 Las páginas pueden contener diagramas escritos como texto. Se dibujan solos al cargar la página.

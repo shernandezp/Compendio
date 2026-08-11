@@ -35,6 +35,21 @@ Checkboxes in a page are clickable. Ticking one saves immediately and appears in
 like any other edit — handy for a runbook you are working through, but be aware that everyone sees
 the same boxes.
 
+## Images
+
+An image in a page is shown scaled to fit the text, in its original proportions. Click it — or
+select it with the keyboard and press **Enter** — to see it as large as your screen allows, with a
+link to the file itself if the original is bigger than that.
+
+An image that is also a link opens the link instead, as its author intended.
+
+If you can edit the page, the enlarged view also offers **Delete the file**. That removes the
+picture from the page *and* deletes the attached file, in one step, after asking you to confirm.
+
+The edit to the page appears in its history like any other, **but the file itself is gone** —
+history keeps versions of pages, not of attachments. Restoring an older version brings the picture's
+line back with nothing behind it, so a deleted image has to be attached again.
+
 ## Diagrams
 
 Pages can contain diagrams written as text. They render automatically when the page loads.

@@ -3,12 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  ActionIcon,
   Alert,
   Anchor,
   Badge,
   Button,
   Card,
   Divider,
+  FileButton,
   Grid,
   Group,
   Loader,
@@ -16,13 +18,16 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconEdit, IconHistory, IconInfoCircle, IconLock } from '@tabler/icons-react';
+import { IconEdit, IconHistory, IconInfoCircle, IconLock, IconPaperclip, IconTrash } from '@tabler/icons-react';
 
 import { AiMenu } from '../ai/AiMenu';
 import { AcknowledgmentBanner, MachineTranslationBanner, StaleBanner } from '../lifecycle/PageBanners';
 import { LifecyclePanel } from '../lifecycle/LifecyclePanel';
 import { AcknowledgmentReport } from '../acknowledgments/AcknowledgmentReport';
+import { ImageLightbox } from './ImageLightbox';
+import { attachmentUrl } from './attachmentRefs';
 
 import { api, ApiError, encodePath } from '../../lib/api';
 import { formatRelative } from '../../lib/format';
@@ -38,6 +43,14 @@ export function PageView() {
 
   const path = decodeURIComponent(location.pathname.replace(/^\/p\//, ''));
   const contentRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Clears the file input after each pick.
+   *
+   * Without it the input keeps the last file it was given, and choosing the same file again fires
+   * no change event at all — so a failed upload could not simply be retried.
+   */
+  const resetFilePicker = useRef<() => void>(null);
 
   const page = useQuery({
     queryKey: ['page', path],
@@ -57,6 +70,64 @@ export function PageView() {
       void renderDiagrams(contentRef.current);
     }
   }, [page.data?.containsMermaid, page.data?.html]);
+
+  /**
+   * **Add a file**, which the guide has always described and nothing rendered.
+   *
+   * No `accept` filter on the picker: the allowed types are an administrator's setting on the
+   * server, and a list hard-coded here would drift from it and silently hide types an instance
+   * allows. The server answers a rejection in the reader's own language, so the honest thing is to
+   * let it decide and to show what it said.
+   */
+  const uploadAttachment = useMutation({
+    mutationFn: (file: File) => api.uploadAttachment(path, file),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['page', path] });
+      notifications.show({ message: t('page.attachmentAdded') });
+    },
+    onError: (error) =>
+      notifications.show({
+        color: 'red',
+        message: error instanceof ApiError && error.detail ? error.detail : t('page.attachmentFailed'),
+      }),
+  });
+
+  /**
+   * Deleting an attachment.
+   *
+   * @remarks
+   * One call. The server removes the images that pointed at the file from the page and then deletes
+   * the file, in that order and against the hash it just read — so a page edited in the meantime
+   * comes back as a conflict with nothing deleted, rather than as a hole in somebody's paragraph.
+   * Doing it in two calls from here could not promise that.
+   */
+  const deleteAttachment = useMutation({
+    mutationFn: (attachment: { path: string; name: string }) => api.deleteAttachment(attachment.path),
+    onSuccess: () => notifications.show({ message: t('page.attachmentDeleted') }),
+    onError: (error) =>
+      notifications.show({
+        color: 'red',
+        message:
+          error instanceof ApiError && error.isConflict
+            ? t('page.attachmentDeleteConflict')
+            : error instanceof ApiError && error.detail
+              ? error.detail
+              : t('page.attachmentDeleteFailed'),
+      }),
+    // Whichever way it went, the page on screen is no longer what the server holds: a success
+    // removed a picture from it, and a failure may have removed one before the delete itself broke.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['page', path] }),
+  });
+
+  /** The confirmation, shared by the two places an attachment can be deleted from. */
+  const confirmDelete = (attachment: { path: string; name: string }) =>
+    modals.openConfirmModal({
+      title: t('page.deleteAttachment'),
+      children: <Text size="sm">{t('page.deleteAttachmentConfirm', { name: attachment.name })}</Text>,
+      labels: { confirm: t('page.deleteAttachment'), cancel: t('common.cancel') },
+      confirmProps: { color: 'red' },
+      onConfirm: () => deleteAttachment.mutate(attachment),
+    });
 
   const toggleCheckbox = useMutation({
     mutationFn: (input: { offset: number; checked: boolean }) =>
@@ -230,6 +301,15 @@ export function PageView() {
           ) : (
             <Text c="dimmed">{t('page.empty')}</Text>
           )}
+
+          {/* Binds itself to the images inside the markup above; renders nothing until one is
+              clicked. */}
+          <ImageLightbox
+            containerRef={contentRef}
+            html={data.html}
+            attachments={data.attachments}
+            onDelete={canWrite ? confirmDelete : undefined}
+          />
         </Stack>
       </Grid.Col>
 
@@ -294,18 +374,65 @@ export function PageView() {
             )}
           </Card>
 
-          {data.attachments.length > 0 && (
+          {/* Shown to a writer even when empty: the first attachment has to be addable from
+              somewhere, and a card that appears only once something is in it never can be. */}
+          {(data.attachments.length > 0 || canWrite) && (
             <Card withBorder padding="sm">
               <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs">
                 {t('page.attachments')}
               </Text>
               <Stack gap={4}>
                 {data.attachments.map((attachment) => (
-                  <Anchor key={attachment.path} href={`/api/v1/attachments/${attachment.path}`} size="sm">
-                    {attachment.name}
-                  </Anchor>
+                  <Group key={attachment.path} gap="xs" wrap="nowrap" justify="space-between">
+                    {/* Encoded segment by segment: a folder called "Router #2" would otherwise
+                        truncate the request at the '#' and ask for a file that is not there. */}
+                    <Anchor href={attachmentUrl(attachment.path)} size="sm" style={{ overflowWrap: 'anywhere' }}>
+                      {attachment.name}
+                    </Anchor>
+
+                    {/* Also here, not only in the image viewer: a PDF has no preview to click. */}
+                    {canWrite && (
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        size="sm"
+                        // The delete edits the page and reindexes it, so it is not always instant.
+                        loading={deleteAttachment.isPending && deleteAttachment.variables?.path === attachment.path}
+                        aria-label={t('page.deleteAttachmentNamed', { name: attachment.name })}
+                        onClick={() => confirmDelete(attachment)}
+                      >
+                        <IconTrash size={14} />
+                      </ActionIcon>
+                    )}
+                  </Group>
                 ))}
               </Stack>
+
+              {canWrite && (
+                <FileButton
+                  resetRef={resetFilePicker}
+                  onChange={(file) => {
+                    if (file) {
+                      uploadAttachment.mutate(file);
+                    }
+
+                    resetFilePicker.current?.();
+                  }}
+                >
+                  {(props) => (
+                    <Button
+                      {...props}
+                      variant="subtle"
+                      size="xs"
+                      mt={data.attachments.length > 0 ? 'xs' : 0}
+                      loading={uploadAttachment.isPending}
+                      leftSection={<IconPaperclip size={14} />}
+                    >
+                      {t('page.addAttachment')}
+                    </Button>
+                  )}
+                </FileButton>
+              )}
             </Card>
           )}
         </Stack>

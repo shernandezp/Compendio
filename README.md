@@ -24,11 +24,15 @@ Licensed under **AGPL-3.0-or-later**.
 
 ### Windows
 
-1. Download `compendio-<version>-win-x64.zip` from the releases page and unzip it to `C:\Compendio`.
+1. Download `compendio-<version>-win-x64.zip` from the releases page, then:
+   ```powershell
+   Unblock-File .\compendio-<version>-win-x64.zip
+   Expand-Archive .\compendio-<version>-win-x64.zip -DestinationPath C:\Compendio
+   ```
 2. Right-click the Start button → **Terminal (Admin)**, then:
    ```powershell
    cd C:\Compendio
-   .\install-windows.ps1
+   powershell -ExecutionPolicy Bypass -File .\install-windows.ps1
    ```
 
 The installer is in the zip. Three questions, all with defaults; it registers the service, opens
