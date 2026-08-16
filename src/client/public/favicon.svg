@@ -1,6 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Compendio">
-  <rect width="64" height="64" rx="14" fill="#4c6ef5"/>
-  <path d="M18 16h20a8 8 0 0 1 8 8v24a6 6 0 0 0-6-6H18z" fill="#ffffff" opacity=".95"/>
-  <path d="M18 16v26h22a6 6 0 0 1 6 6" fill="none" stroke="#3b5bdb" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M24 26h14M24 32h14M24 38h9" stroke="#4c6ef5" stroke-width="2.5" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="cmp-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5c7cfa"/>
+      <stop offset="1" stop-color="#3b5bdb"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#cmp-bg)"/>
+  <path d="M17 16h20a7 7 0 0 1 7 7v25a6 6 0 0 0-6-6H17z" fill="#ffffff" opacity=".97"/>
+  <path d="M17 16v26h21a6 6 0 0 1 6 6" fill="none" stroke="#364fc7" stroke-width="2.2" stroke-linejoin="round" opacity=".45"/>
+  <path d="M23 25h14M23 31h14M23 37h9" stroke="#4263eb" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M32 16h8v13l-4-3.2-4 3.2z" fill="#ffd43b"/>
 </svg>

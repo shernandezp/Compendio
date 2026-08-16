@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="src/client/public/logo.svg" alt="Compendio" width="340" />
+</p>
+
 # Compendio
 
 **A Markdown folder that is the database of record**, with an editor a non-technical person can use,

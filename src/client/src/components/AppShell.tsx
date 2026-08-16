@@ -81,9 +81,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Group h="100%" px="md" gap="sm" wrap="nowrap">
           <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label={t('app.menu')} />
 
-          <Text component={Link} to="/" fw={700} size="lg" style={{ textDecoration: 'none' }}>
-            {about.data?.instanceName ?? t('app.name')}
-          </Text>
+          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Group gap="xs" wrap="nowrap">
+              <img src="/favicon.svg" alt="" width={28} height={28} style={{ display: 'block' }} />
+              <Text fw={700} size="lg">
+                {about.data?.instanceName ?? t('app.name')}
+              </Text>
+            </Group>
+          </Link>
 
           <form onSubmit={submitSearch} style={{ flex: 1, maxWidth: 520 }}>
             <TextInput
