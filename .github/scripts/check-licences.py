@@ -40,6 +40,14 @@ TRUSTED_PREFIXES = (
     "Common.Mediator",
 )
 
+# Exact package ids that are known-good but carry no SPDX expression the check can read.
+#   SQLite — the native e_sqlite3 build (author Eric Sink, projectUrl sqlite.org) that the trusted
+#   SQLitePCLRaw.* family depends on. SQLite itself is public domain; the package only ships the
+#   deprecated aka.ms/deprecateLicenseUrl placeholder instead of a licence expression.
+TRUSTED_IDS = {
+    "SQLite",
+}
+
 NUGET_REGISTRATION = "https://api.nuget.org/v3/registration5-gz-semver2/{id}/{version}.json"
 
 
@@ -91,7 +99,7 @@ def main(path: str) -> int:
     unknown: list[str] = []
 
     for package_id, version in sorted(seen.items()):
-        if package_id.startswith(TRUSTED_PREFIXES):
+        if package_id.startswith(TRUSTED_PREFIXES) or package_id in TRUSTED_IDS:
             continue
 
         expression = licence_for(package_id, version)
