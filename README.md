@@ -184,9 +184,6 @@ every language the interface does. The files below are for whoever installs and 
 | [docs/development.md](docs/development.md) | Running it locally, hot reload, tests, trying each feature |
 | [docs/api.md](docs/api.md) | The HTTP API |
 | [docs/translating.md](docs/translating.md) | Adding a language |
-| [project-overview.md](project-overview.md) | What Compendio is, and why |
-| [compendio-implementation/v0-implementation.md](compendio-implementation/v0-implementation.md) | How v0 was built, and every decision behind it |
-| [compendio-implementation/v1-implementation.md](compendio-implementation/v1-implementation.md) | The same for v1: lifecycle, AI, and what was deliberately left out |
 
 ---
 

@@ -31,3 +31,4 @@ Thumbs.db
 ## Local-only working files — planning notes and the implementation scratch folder, never committed
 compendio-implementation/
 project-overview.md
+specs/
