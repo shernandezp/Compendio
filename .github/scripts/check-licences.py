@@ -10,6 +10,7 @@ considered should stop the build and get a decision, not slip through because it
 of known-bad ones.
 """
 
+import gzip
 import json
 import sys
 import urllib.error
@@ -46,8 +47,13 @@ def licence_for(package_id: str, version: str) -> str | None:
     url = NUGET_REGISTRATION.format(id=package_id.lower(), version=version.lower())
     try:
         with urllib.request.urlopen(url, timeout=20) as response:
-            data = json.load(response)
-    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError):
+            body = response.read()
+        # The registration5-gz-semver2 resource serves gzip-encoded content that urllib does not
+        # transparently decode, so a raw json.load would choke on the 0x1f 0x8b magic bytes.
+        if body[:2] == b"\x1f\x8b":
+            body = gzip.decompress(body)
+        data = json.loads(body)
+    except (urllib.error.URLError, OSError, ValueError, TimeoutError):
         return None
 
     catalog = data.get("catalogEntry", {})

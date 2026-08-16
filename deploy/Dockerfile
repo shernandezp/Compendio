@@ -44,6 +44,10 @@ RUN dotnet publish Compendio/src/Server/Compendio.Server.csproj \
         -p:SkipClientBuild=true \
         --no-restore
 
+# Pre-create the data tree here (the chiselled runtime has no shell to mkdir at runtime), so it can
+# be copied in with the non-root user's ownership below.
+RUN mkdir -p /data/content /data/db /data/keys /data/logs /data/backups
+
 
 # ---- Runtime -----------------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS runtime
@@ -56,9 +60,16 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true \
 WORKDIR /app
 COPY --from=server /app .
 
-# Three volumes, not one. `keys` is separate and called out in the docs because losing it loses
-# every encrypted page — an operator who bind-mounts only `content` and `db` finds that out late.
-VOLUME ["/data/content", "/data/db", "/data/keys"]
+# The runtime user is non-root (UID 64198) and cannot create directories under a root-owned /data,
+# so the data tree is copied in already owned by it. Without this the first write to /data/logs
+# fails with "Access to the path '/data/logs' is denied."
+COPY --from=server --chown=64198:64198 /data /data
+
+# No VOLUME declarations: under the containerd image store an anonymous volume is created root-owned
+# rather than inheriting the 64198 ownership above, which stops the non-root process writing to
+# /data/db or /data/keys. Persistence is always mounted explicitly instead — the three paths to
+# mount (content, db, and keys separately) are documented in deploy/docker-compose.yml, because
+# losing `keys` loses every encrypted page.
 
 EXPOSE 8080
 
