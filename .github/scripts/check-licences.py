@@ -10,6 +10,7 @@ considered should stop the build and get a decision, not slip through because it
 of known-bad ones.
 """
 
+import gzip
 import json
 import sys
 import urllib.error
@@ -39,6 +40,14 @@ TRUSTED_PREFIXES = (
     "Common.Mediator",
 )
 
+# Exact package ids that are known-good but carry no SPDX expression the check can read.
+#   SQLite — the native e_sqlite3 build (author Eric Sink, projectUrl sqlite.org) that the trusted
+#   SQLitePCLRaw.* family depends on. SQLite itself is public domain; the package only ships the
+#   deprecated aka.ms/deprecateLicenseUrl placeholder instead of a licence expression.
+TRUSTED_IDS = {
+    "SQLite",
+}
+
 NUGET_REGISTRATION = "https://api.nuget.org/v3/registration5-gz-semver2/{id}/{version}.json"
 
 
@@ -46,11 +55,32 @@ def licence_for(package_id: str, version: str) -> str | None:
     url = NUGET_REGISTRATION.format(id=package_id.lower(), version=version.lower())
     try:
         with urllib.request.urlopen(url, timeout=20) as response:
-            data = json.load(response)
-    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError):
+            body = response.read()
+        # The registration5-gz-semver2 resource serves gzip-encoded content that urllib does not
+        # transparently decode, so a raw json.load would choke on the 0x1f 0x8b magic bytes.
+        if body[:2] == b"\x1f\x8b":
+            body = gzip.decompress(body)
+        data = json.loads(body)
+    except (urllib.error.URLError, OSError, ValueError, TimeoutError):
         return None
 
-    catalog = data.get("catalogEntry", {})
+    catalog = data.get("catalogEntry") if isinstance(data, dict) else None
+
+    # `catalogEntry` is normally an inlined object, but the registration hive is allowed to leave it
+    # as a bare URL string when the entry is not inlined. Resolve that one extra hop before giving up.
+    if isinstance(catalog, str):
+        try:
+            with urllib.request.urlopen(catalog, timeout=20) as response:
+                body = response.read()
+            if body[:2] == b"\x1f\x8b":
+                body = gzip.decompress(body)
+            catalog = json.loads(body)
+        except (urllib.error.URLError, OSError, ValueError, TimeoutError):
+            return None
+
+    if not isinstance(catalog, dict):
+        return None
+
     return catalog.get("licenseExpression") or catalog.get("licenseUrl")
 
 
@@ -69,7 +99,7 @@ def main(path: str) -> int:
     unknown: list[str] = []
 
     for package_id, version in sorted(seen.items()):
-        if package_id.startswith(TRUSTED_PREFIXES):
+        if package_id.startswith(TRUSTED_PREFIXES) or package_id in TRUSTED_IDS:
             continue
 
         expression = licence_for(package_id, version)

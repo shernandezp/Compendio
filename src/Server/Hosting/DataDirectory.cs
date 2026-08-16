@@ -90,16 +90,32 @@ public sealed class DataDirectory
     /// on Windows the installer sets the ACL, because inherited ACLs are the norm there and
     /// stripping them from a running service is more likely to lock the product out of its own key.
     /// </summary>
+    /// <remarks>
+    /// The mode change is best-effort. When <c>keys</c> is a mounted volume the operator owns — the
+    /// default for the container, where the host bind-mount is created root-owned — a non-root
+    /// process can write inside it but cannot <c>chmod</c> it, and crashing there would take the
+    /// whole instance down over a hardening step the operator is already responsible for. The
+    /// tightening still applies on the common path where the process owns the directory.
+    /// </remarks>
     private static void CreateProtectedDirectory(string path)
     {
+        Directory.CreateDirectory(path);
+
         if (OperatingSystem.IsWindows())
         {
-            Directory.CreateDirectory(path);
             return;
         }
 
-        Directory.CreateDirectory(path);
-        File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        try
+        {
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            Console.Error.WriteLine(
+                $"warning: could not restrict permissions on '{path}' ({ex.Message}). " +
+                "Ensure the directory is not readable by other users.");
+        }
     }
 
     /// <summary>

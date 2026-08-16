@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an improvement, keeping Compendio's scope in mind
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Compendio deliberately refuses some things — no SMTP, no real-time co-editing, no plugin
+        marketplace, no native mobile apps, and no required external service. Please read the
+        README's **"What it refuses to be"** section before filing.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the need, not just the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

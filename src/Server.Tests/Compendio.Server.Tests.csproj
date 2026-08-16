@@ -18,9 +18,7 @@
 
   <ItemGroup>
     <!-- SkipClientBuild: the test run does not need the SPA, and npm in CI test jobs is a tax. -->
-    <ProjectReference Include="..\Server\Compendio.Server.csproj">
-      <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
-    </ProjectReference>
+    <ProjectReference Include="..\Server\Compendio.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>
