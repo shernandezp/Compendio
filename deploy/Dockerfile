@@ -44,8 +44,8 @@ RUN dotnet publish Compendio/src/Server/Compendio.Server.csproj \
         -p:SkipClientBuild=true \
         --no-restore
 
-# Pre-create the data tree here (the chiselled runtime has no shell to mkdir at runtime), so it can
-# be copied in with the non-root user's ownership below.
+# Pre-create the data tree here; the chiselled runtime has no shell to mkdir at runtime. Ownership
+# is set on the way into the runtime stage below, where the app user's UID is known.
 RUN mkdir -p /data/content /data/db /data/keys /data/logs /data/backups
 
 
@@ -60,16 +60,17 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true \
 WORKDIR /app
 COPY --from=server /app .
 
-# The runtime user is non-root (UID 64198) and cannot create directories under a root-owned /data,
-# so the data tree is copied in already owned by it. Without this the first write to /data/logs
-# fails with "Access to the path '/data/logs' is denied."
-COPY --from=server --chown=64198:64198 /data /data
+# The runtime user is the image's non-root app user ($APP_UID, 1654 on the .NET 10 chiselled base).
+# The data tree is copied in already owned by it, so the first write to /data/logs or the creation
+# of /data/keys/dataprotection is not denied. $APP_UID is used rather than a hard-coded number
+# because Microsoft has changed it between releases (it was 64198 on .NET 8).
+COPY --from=server --chown=$APP_UID:$APP_UID /data /data
 
 # No VOLUME declarations: under the containerd image store an anonymous volume is created root-owned
-# rather than inheriting the 64198 ownership above, which stops the non-root process writing to
-# /data/db or /data/keys. Persistence is always mounted explicitly instead — the three paths to
-# mount (content, db, and keys separately) are documented in deploy/docker-compose.yml, because
-# losing `keys` loses every encrypted page.
+# rather than inheriting the ownership above, which stops the non-root process writing to /data/db
+# or /data/keys. Persistence is always mounted explicitly instead — the three paths to mount
+# (content, db, and keys separately) are documented in deploy/docker-compose.yml, because losing
+# `keys` loses every encrypted page.
 
 EXPOSE 8080
 
@@ -77,5 +78,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD ["/app/compendio", "--version"]
 
-# Non-root by default in the chiselled base (UID 64198).
+# Non-root by default in the chiselled base ($APP_UID).
 ENTRYPOINT ["/app/compendio"]

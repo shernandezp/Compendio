@@ -56,7 +56,23 @@ def licence_for(package_id: str, version: str) -> str | None:
     except (urllib.error.URLError, OSError, ValueError, TimeoutError):
         return None
 
-    catalog = data.get("catalogEntry", {})
+    catalog = data.get("catalogEntry") if isinstance(data, dict) else None
+
+    # `catalogEntry` is normally an inlined object, but the registration hive is allowed to leave it
+    # as a bare URL string when the entry is not inlined. Resolve that one extra hop before giving up.
+    if isinstance(catalog, str):
+        try:
+            with urllib.request.urlopen(catalog, timeout=20) as response:
+                body = response.read()
+            if body[:2] == b"\x1f\x8b":
+                body = gzip.decompress(body)
+            catalog = json.loads(body)
+        except (urllib.error.URLError, OSError, ValueError, TimeoutError):
+            return None
+
+    if not isinstance(catalog, dict):
+        return None
+
     return catalog.get("licenseExpression") or catalog.get("licenseUrl")
 
 
