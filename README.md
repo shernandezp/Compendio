@@ -24,6 +24,19 @@ Licensed under **AGPL-3.0-or-later**.
 
 ---
 
+## Try the demo
+
+A live instance runs at **<https://compendio.sergiohernandezp.com/>** — click through the editor,
+the folder tree and search without installing anything.
+
+Sign in with `admin` / `Compendio-Demo!` — the credentials are public on purpose. Anyone can read
+and edit, so treat everything in it as public and please do not put real or personal information
+in it. The whole instance is restored to its default state **every Monday**, so any changes —
+content, users, even a changed admin password — are wiped weekly. If someone has left it in a mess
+or changed the password, come back after Monday's reset.
+
+---
+
 ## Install in five minutes
 
 ### Windows
