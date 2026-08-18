@@ -24,6 +24,13 @@ Licensed under **AGPL-3.0-or-later**.
 
 ---
 
+## Try the demo
+
+A live instance runs at **<https://compendio.sergiohernandezp.com/>** — click through the editor,
+the folder tree and search without installing anything.
+
+---
+
 ## Install in five minutes
 
 ### Windows
