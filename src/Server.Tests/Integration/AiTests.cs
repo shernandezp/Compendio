@@ -35,8 +35,8 @@ public sealed class AiTests(CompendioApplication app) : IAsyncLifetime
     /// </remarks>
     private const string Secret = "Bluebird";
     private const string RestrictedFolder = "AiSecrets";
-    private const string RestrictedPage = "AiSecrets/merger.md";
-    private const string OpenPage = "AiOpen/handbook.md";
+    private const string RestrictedPage = "AiSecrets/Merger.md";
+    private const string OpenPage = "AiOpen/Handbook.md";
 
     private static JsonSerializerOptions Json => CompendioApplication.Json;
 
@@ -123,7 +123,7 @@ public sealed class AiTests(CompendioApplication app) : IAsyncLifetime
         // The assertion that counts: the secret was never in a prompt. Filtering the answer would be
         // filtering after the fact, which is the thing the design refuses to do.
         app.Ai.AllPromptText.ShouldNotContain(Secret);
-        app.Ai.AllPromptText.ShouldNotContain("merger.md");
+        app.Ai.AllPromptText.ShouldNotContain("Merger.md");
 
         answer.GetProperty("citations").EnumerateArray()
             .ShouldNotContain(c => c.GetProperty("path").GetString() == RestrictedPage);
@@ -181,7 +181,7 @@ public sealed class AiTests(CompendioApplication app) : IAsyncLifetime
         await ConfigureAiAsync();
 
         var source = await EnsurePageAsync("AiOpen", "Holiday policy",
-            "You get twenty-three days.\n", "AiOpen/holiday-policy.md");
+            "You get twenty-three days.\n", "AiOpen/Holiday-policy.md");
 
         app.Ai.Reply = "Tienes veintitrés días.\n";
 
@@ -225,7 +225,7 @@ public sealed class AiTests(CompendioApplication app) : IAsyncLifetime
         await ConfigureAiAsync();
 
         const string folder = "AiVault";
-        const string page = "AiVault/passwords.md";
+        const string page = "AiVault/Passwords.md";
 
         await EnsurePageAsync(folder, "Passwords", "The wifi key is hunter2.\n", page);
 

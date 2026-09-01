@@ -39,7 +39,12 @@ registro de lo ocurrido sigue completo.
 ## Páginas eliminadas
 
 Al eliminar una página se borra el archivo pero se conserva el historial. Un administrador puede
-recuperarla.
+recuperarla desde **Administración → Páginas eliminadas**: la página vuelve a donde estaba, con su
+último texto y todo su historial, y la propia restauración queda registrada en ese historial. Si
+mientras tanto se ha creado otra cosa en la ruta antigua, el administrador elige otra.
+
+El historial de una página eliminada se conserva durante un periodo de retención que fija el
+administrador; después se elimina definitivamente.
 
 ## Dónde está esto realmente
 

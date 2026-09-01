@@ -72,8 +72,28 @@ public sealed record PageDto
 
 public sealed record HeadingDto(int Level, string Text, string Anchor);
 
-/// <param name="IsStale">The source page changed after this translation did.</param>
+/// <param name="IsStale">
+/// This sibling is the source text and it changed after the page being read did. Set only on a
+/// translation's view of its source, so the "source has changed" banner lands on the translation.
+/// </param>
 public sealed record TranslationDto(string Path, string Lang, string Title, bool IsStale);
+
+/// <summary>
+/// A page whose file is gone but whose history is still inside the retention window.
+/// </summary>
+/// <param name="PageId">The identity the versions are keyed by; a restore keeps it, and the history with it.</param>
+/// <param name="Path">Where the page was when it was deleted.</param>
+/// <param name="Title">From the last version's front matter, so the list reads as pages rather than paths.</param>
+/// <param name="DeletedAt">When the versions were tombstoned.</param>
+/// <param name="LastVersionAt">When the content a restore would bring back was written.</param>
+/// <param name="Versions">How much history comes back with it.</param>
+public sealed record DeletedPageDto(
+    Guid PageId,
+    string Path,
+    string Title,
+    DateTimeOffset DeletedAt,
+    DateTimeOffset LastVersionAt,
+    int Versions);
 
 public sealed record AttachmentDto(string Path, string Name, string ContentType, long ByteSize, DateTimeOffset CreatedAt);
 

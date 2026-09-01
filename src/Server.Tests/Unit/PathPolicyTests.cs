@@ -181,14 +181,41 @@ public sealed class PathPolicyTests : IDisposable
     public void IgnoresEditorAndVersionControlNoise(string path, bool ignored) =>
         PathPolicy.IsIgnored(ContentPath.FromTrusted(path)).ShouldBe(ignored);
 
+    /// <summary>
+    /// Accents go, case stays. "Index" is <c>Index.md</c>, not <c>index.md</c>: the file name is
+    /// what the person typed, made portable, and folder names are shown from the disk.
+    /// </summary>
     [Theory]
-    [InlineData("Política de teletrabajo", "politica-de-teletrabajo")]
-    [InlineData("Configuración de sesión", "configuracion-de-sesion")]
-    [InlineData("Años y ñoños", "anos-y-nonos")]
-    [InlineData("VPN-Site-A", "vpn-site-a")]
+    [InlineData("Política de teletrabajo", "Politica-de-teletrabajo")]
+    [InlineData("Configuración de sesión", "Configuracion-de-sesion")]
+    [InlineData("Años y ñoños", "Anos-y-nonos")]
+    [InlineData("VPN-Site-A", "VPN-Site-A")]
+    [InlineData("Index", "Index")]
+    [InlineData("IT", "IT")]
     [InlineData("192.168.1.1", "192.168.1.1")]
     [InlineData("snake_case_name", "snake_case_name")]
     [InlineData("   ", "untitled")]
     public void SlugifiesTitlesToAsciiFileNames(string title, string expected) =>
         Slug.Create(title).ShouldBe(expected);
+
+    /// <summary>Anchors are the exception: a URL fragment is lower-case, and existing links rely on it.</summary>
+    [Theory]
+    [InlineData("Configuration", "configuration")]
+    [InlineData("Paso 2: Configuración", "paso-2-configuracion")]
+    public void HeadingAnchorsStayLowerCase(string heading, string expected) =>
+        Slug.Anchor(heading).ShouldBe(expected);
+
+    /// <summary>
+    /// Collisions are resolved against a case-insensitive check, so <c>Index.md</c> beside an existing
+    /// <c>index.md</c> becomes <c>Index-2.md</c> on every platform — not a second file on Linux that
+    /// turns into a clash the day the folder is copied to a Windows share.
+    /// </summary>
+    [Fact]
+    public void DisambiguatesAgainstCaseInsensitiveNames()
+    {
+        var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "index.md" };
+
+        Slug.Disambiguate("Index.md", taken.Contains).ShouldBe("Index-2.md");
+        Slug.Disambiguate("Other.md", taken.Contains).ShouldBe("Other.md");
+    }
 }

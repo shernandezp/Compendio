@@ -7,10 +7,21 @@ namespace Compendio.Domain.Content;
 /// ASCII slugification for file and folder names.
 /// </summary>
 /// <remarks>
+/// <para>
 /// This is a path-safety and portability decision, not an aesthetic one: accented and non-ASCII
 /// file names survive a local disk but not reliably an SMB share, a zip round-trip or a git client
 /// on a different platform. The accented title lives in front matter and is what the UI shows;
 /// renaming a title therefore does not rename the file unless the user asks for it.
+/// </para>
+/// <para>
+/// Letter case is <em>kept</em>. A page titled "Index" is the file <c>Index.md</c> and a folder
+/// named "Infrastructure" is the directory <c>Infrastructure</c> — which is what the tree shows,
+/// because folder names come from the disk. Lower-casing everything turned "IT" into "it" and every
+/// name a person typed into something they had not, for no portability gain: the real risk with
+/// case is two names that differ only by it, and that is handled where collisions are checked
+/// (<see cref="Disambiguate"/>), not by flattening every name. Heading anchors are the exception
+/// (<see cref="Anchor"/>): a URL fragment is conventionally lower-case and existing links rely on it.
+/// </para>
 /// </remarks>
 public static class Slug
 {
@@ -71,7 +82,7 @@ public static class Slug
                 }
 
                 pendingSeparator = false;
-                builder.Append(char.ToLowerInvariant(c));
+                builder.Append(c);
             }
             else if (c is '-' or '_' or '.')
             {
@@ -141,8 +152,23 @@ public static class Slug
         Create(title) + CompendioConstants.MarkdownExtension;
 
     /// <summary>
-    /// Resolves a collision by appending a numeric suffix: <c>politica</c>, <c>politica-2</c>, …
+    /// A heading anchor: the slug, lower-cased.
     /// </summary>
+    /// <remarks>
+    /// File names keep their case; anchors do not. <c>#configuration</c> is what every Markdown
+    /// renderer produces for "## Configuration", it is what people have already typed into links,
+    /// and a fragment that changed case with the heading would break them all.
+    /// </remarks>
+    public static string Anchor(string? text) => Create(text).ToLowerInvariant();
+
+    /// <summary>
+    /// Resolves a collision by appending a numeric suffix: <c>Politica</c>, <c>Politica-2</c>, …
+    /// </summary>
+    /// <param name="exists">
+    /// Whether a name is taken. Callers pass a <em>case-insensitive</em> check: <c>Index.md</c> and
+    /// <c>index.md</c> are one file on Windows and two on Linux, and content written on one has to
+    /// survive being copied to the other.
+    /// </param>
     public static string Disambiguate(string baseName, Func<string, bool> exists)
     {
         if (!exists(baseName))

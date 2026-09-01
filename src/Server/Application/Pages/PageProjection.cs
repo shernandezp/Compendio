@@ -81,9 +81,17 @@ public sealed class PageProjection(
     /// Sibling language versions, found by <c>translationKey</c>.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// A missing translation is a banner, never a 404 and never a blank page — showing the version
     /// that does exist and saying so is the only behaviour that is useful to the reader.
-    /// The staleness flag is what keeps a bilingual wiki honest: it says the source moved on.
+    /// </para>
+    /// <para>
+    /// The staleness flag is what keeps a bilingual wiki honest: it says the source moved on. It is
+    /// set on the sibling that <em>is</em> the source, when this page is a translation and the
+    /// source was written to after it — the same rule the notifier uses to tell the translation's
+    /// owner. It used to be the other way round, marking siblings <em>older</em> than this page, so
+    /// the "source has changed" banner appeared on the source and never on the translation.
+    /// </para>
     /// </remarks>
     private async Task<IReadOnlyList<TranslationDto>> TranslationsAsync(Page page, CancellationToken cancellationToken)
     {
@@ -105,13 +113,17 @@ public sealed class PageProjection(
             .AsNoTracking()
             .ToDictionaryAsync(f => f.Id, f => f.Path, cancellationToken);
 
+        var isTranslation = !Domain.Localization.SupportedLanguages.IsReference(page.Lang);
+
         return siblings
             .Where(s => isAdmin || (folderPaths.TryGetValue(s.FolderId, out var folder) && readable.Contains(folder)))
             .Select(s => new TranslationDto(
                 s.Path,
                 s.Lang ?? string.Empty,
                 s.Title,
-                IsStale: s.UpdatedAt < page.UpdatedAt))
+                IsStale: isTranslation
+                         && Domain.Localization.SupportedLanguages.IsReference(s.Lang)
+                         && s.UpdatedAt > page.UpdatedAt))
             .ToArray();
     }
 

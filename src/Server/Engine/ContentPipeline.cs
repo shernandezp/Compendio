@@ -112,6 +112,54 @@ public sealed class ContentPipeline(
         return page;
     }
 
+    public async Task<Page> RestoreDeletedPageAsync(
+        Guid pageId,
+        ContentPath path,
+        byte[] content,
+        Guid? actorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (store.Exists(path))
+        {
+            throw CompendioException.Exists(path);
+        }
+
+        await using (var db = await dbFactory.CreateDbContextAsync(cancellationToken))
+        {
+            if (await db.Pages.AnyAsync(p => p.Id == pageId || p.Path == path.Value, cancellationToken))
+            {
+                throw CompendioException.Exists(path);
+            }
+
+            // The row goes in first, under the old id, so the save below finds it by path and
+            // updates it rather than minting a new identity. Everything else on it is overwritten by
+            // that save; only the id and the path have to be right here.
+            var folder = await EnsureFolderRowAsync(db, path.Parent, cancellationToken);
+            db.Pages.Add(new Page
+            {
+                Id = pageId,
+                Path = path.Value,
+                FolderId = folder.Id,
+                Slug = path.NameWithoutExtension,
+                Title = path.NameWithoutExtension,
+                ContentHash = string.Empty,
+                UpdatedAt = clock.UtcNow,
+            });
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        await history.ReviveAsync(pageId, cancellationToken);
+
+        // Recorded as a restore, so history says what happened: "restored" after "deleted", not an
+        // unexplained edit.
+        var page = await SavePageAsync(path, content, expectedHash: null, actorUserId,
+            VersionSource.Restore, note: "restore:deleted", cancellationToken);
+
+        await AuditAsync("page.restore_deleted", "page", path.Value, actorUserId, before: null, after: path.Value, cancellationToken);
+        return page;
+    }
+
     public async Task<Folder> EnsureFolderAsync(ContentPath path, CancellationToken cancellationToken = default)
     {
         await store.CreateFolderAsync(path, cancellationToken);
@@ -191,8 +239,15 @@ public sealed class ContentPipeline(
         // Every row this rebases is keyed by a unique path, so a destination that already has rows
         // would fail the move half-way through. That only happens when something already ingested
         // the new location as a new folder, and the reconciliation pass is what repairs that.
-        if (await db.Folders.AnyAsync(f => f.Path == to.Value, cancellationToken) ||
-            await db.Pages.AnyAsync(p => p.Path.StartsWith(to.Value + "/"), cancellationToken))
+        // Compared ordinally in memory: SQLite's LIKE, which StartsWith becomes, ignores ASCII case,
+        // and a rename from "ops" to "Ops" would otherwise find its own pages at the destination and
+        // refuse to move them.
+        var prefix = to.Value + "/";
+        var occupied = await db.Folders.AnyAsync(f => f.Path == to.Value, cancellationToken)
+                       || (await db.Pages.Where(p => p.Path.StartsWith(prefix)).Select(p => p.Path).ToListAsync(cancellationToken))
+                           .Any(p => p.StartsWith(prefix, StringComparison.Ordinal));
+
+        if (occupied)
         {
             logger.LogWarning(
                 "Not moving '{From}' onto '{To}': the destination already has rows. Reconciliation will sort it out.",
@@ -289,8 +344,42 @@ public sealed class ContentPipeline(
             return;
         }
 
+        file = await EncryptIfDroppedInSecureScopeAsync(path, file, cancellationToken);
+
         await SyncAsync(path, file, actorUserId: null, VersionSource.External, note: null,
             markCanonical: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// A plaintext page that appeared inside a secure scope is an ingest: encrypt it, remove the
+    /// plaintext.
+    /// </summary>
+    /// <remarks>
+    /// Somebody copying a Markdown file into an encrypted folder over the share, or restoring one
+    /// from a plain backup, has put a secret on disk in the clear. Recording it as a secure page and
+    /// leaving the file as it was would show the lock icon over an unencrypted file. The store's
+    /// write does both halves — the envelope, and the best-effort shred of the plaintext — so this
+    /// only has to notice. A key that is unavailable is logged and left alone rather than failing the
+    /// pass: the page is still tracked, still marked secure, and so still kept out of the index.
+    /// </remarks>
+    private async Task<ContentFile> EncryptIfDroppedInSecureScopeAsync(ContentPath path, ContentFile file, CancellationToken cancellationToken)
+    {
+        if (file.WasEncrypted || !await secureScopes.IsSecureAsync(path, cancellationToken))
+        {
+            return file;
+        }
+
+        try
+        {
+            var encrypted = await store.WriteAsync(path, file.Bytes, file.ContentHash, cancellationToken);
+            logger.LogInformation("Encrypted '{Path}': a plaintext file appeared inside a secure scope.", path.Value);
+            return encrypted with { ModifiedAt = file.ModifiedAt };
+        }
+        catch (CompendioException e)
+        {
+            logger.LogWarning("Could not encrypt '{Path}', which appeared in plaintext inside a secure scope: {Code}.", path.Value, e.Code);
+            return file;
+        }
     }
 
     public async Task IngestDeleteAsync(ContentPath path, CancellationToken cancellationToken = default)
@@ -425,6 +514,8 @@ public sealed class ContentPipeline(
             return;
         }
 
+        await EncryptAttachmentIfDroppedInSecureScopeAsync(path, cancellationToken);
+
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
         // assets/ sits in the page's folder and is shared by every page in it, so an externally
@@ -452,7 +543,8 @@ public sealed class ContentPipeline(
 
         var pageId = candidates[0];
         var existing = await db.Attachments.FirstOrDefaultAsync(a => a.Path == path.Value, cancellationToken);
-        if (!paths.TryResolve(path, out var absolute) || !File.Exists(absolute))
+        if (!paths.TryResolve(path, out var absolute) ||
+            !(File.Exists(absolute) || File.Exists(absolute + CompendioConstants.EncryptedExtension)))
         {
             if (existing is not null)
             {
@@ -463,7 +555,9 @@ public sealed class ContentPipeline(
             return;
         }
 
-        var info = new FileInfo(absolute);
+        // The envelope, when there is one: the plaintext was shredded above.
+        var encryptedAbsolute = absolute + CompendioConstants.EncryptedExtension;
+        var info = new FileInfo(File.Exists(absolute) ? absolute : encryptedAbsolute);
         if (existing is null)
         {
             db.Attachments.Add(new Attachment
@@ -483,6 +577,36 @@ public sealed class ContentPipeline(
         }
 
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The attachment half of the secure-scope ingest rule: a plaintext file inside an encrypted
+    /// folder's <c>assets/</c> is encrypted and the plaintext removed.
+    /// </summary>
+    /// <remarks>
+    /// Read directly rather than through the store's page read, which enforces the page size budget
+    /// — an attachment has its own, larger one, checked on upload and not re-checked here because
+    /// the file is already on disk either way.
+    /// </remarks>
+    private async Task EncryptAttachmentIfDroppedInSecureScopeAsync(ContentPath path, CancellationToken cancellationToken)
+    {
+        if (!paths.TryResolve(path, out var absolute) || !File.Exists(absolute) ||
+            !await secureScopes.IsSecureAsync(path, cancellationToken))
+        {
+            return;
+        }
+
+        try
+        {
+            var bytes = await File.ReadAllBytesAsync(absolute, cancellationToken);
+            await store.WriteAsync(path, bytes, ContentStore.Hash(bytes), cancellationToken);
+            logger.LogInformation("Encrypted attachment '{Path}': a plaintext file appeared inside a secure scope.", path.Value);
+        }
+        catch (Exception e) when (e is CompendioException or IOException or UnauthorizedAccessException)
+        {
+            logger.LogWarning("Could not encrypt attachment '{Path}', which appeared in plaintext inside a secure scope: {Reason}.",
+                path.Value, e.GetType().Name);
+        }
     }
 
     /// <summary>

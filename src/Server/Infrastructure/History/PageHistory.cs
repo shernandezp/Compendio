@@ -115,9 +115,11 @@ public sealed class PageHistory(
 
         var hash = Content.ContentStore.Hash(content);
 
-        // The watcher fires several events per save. An identical snapshot is noise, not history.
+        // The watcher fires several events per save. An identical snapshot is noise, not history —
+        // except when the event itself is the history: a move, a delete, or a restore that brings
+        // back exactly the bytes the delete recorded still has to say it happened.
         if (last is not null && string.Equals(last.ContentHash, hash, StringComparison.OrdinalIgnoreCase)
-                             && source is not (VersionSource.Move or VersionSource.Delete))
+                             && source is not (VersionSource.Move or VersionSource.Delete or VersionSource.Restore))
         {
             return;
         }
@@ -225,6 +227,14 @@ public sealed class PageHistory(
         await db.PageVersions
             .Where(v => v.PageId == pageId && v.TombstonedAt == null)
             .ExecuteUpdateAsync(v => v.SetProperty(x => x.TombstonedAt, at), cancellationToken);
+    }
+
+    public async Task ReviveAsync(Guid pageId, CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+        await db.PageVersions
+            .Where(v => v.PageId == pageId && v.TombstonedAt != null)
+            .ExecuteUpdateAsync(v => v.SetProperty(x => x.TombstonedAt, (DateTimeOffset?)null), cancellationToken);
     }
 
     /// <summary>

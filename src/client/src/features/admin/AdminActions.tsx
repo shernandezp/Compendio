@@ -15,9 +15,9 @@ import {
   TextInput,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconDatabaseExport, IconPencil, IconUserPlus, IconUsers, IconUsersPlus } from '@tabler/icons-react';
+import { IconDatabaseExport, IconPencil, IconRestore, IconUserPlus, IconUsers, IconUsersPlus } from '@tabler/icons-react';
 
-import { ApiError, api, type Group as GroupModel, type User, type UserRole } from '../../lib/api';
+import { ApiError, api, type DeletedPage, type Group as GroupModel, type User, type UserRole } from '../../lib/api';
 
 /**
  * The three "create" actions the administration screen was missing: a person, a group, and a
@@ -416,6 +416,81 @@ export function ManageGroupMembersButton({ group, users }: { group: GroupModel; 
             </Button>
             <Button onClick={() => save.mutate()} loading={save.isPending}>
               {t('app.save')}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </>
+  );
+}
+
+/**
+ * Bring a deleted page back.
+ *
+ * @remarks
+ * The path is offered prefilled with where the page was, and only has to be touched when something
+ * else has since been created there — the server answers that case with `path.exists`, which is
+ * turned into a message on the field rather than a generic failure. The restored page keeps its
+ * history, so the tree and every open query are refreshed rather than patched.
+ */
+export function RestoreDeletedPageButton({ page }: { page: DeletedPage }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
+  const [opened, setOpened] = useState(false);
+  const [target, setTarget] = useState(page.path);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  function open() {
+    setTarget(page.path);
+    setFailure(null);
+    setOpened(true);
+  }
+
+  const restore = useMutation({
+    mutationFn: () => api.restoreDeletedPage(page.pageId, target.trim() === page.path ? undefined : target.trim()),
+    onSuccess: async (restored) => {
+      await queryClient.invalidateQueries({ queryKey: ['deleted-pages'] });
+      await queryClient.invalidateQueries({ queryKey: ['tree'] });
+      notifications.show({ message: t('admin.deleted.restored', { path: restored.path }) });
+      setOpened(false);
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.code === 'path.exists') {
+        setFailure(t('admin.deleted.exists'));
+        return;
+      }
+      reportError(t('app.error.generic'))(error);
+    },
+  });
+
+  return (
+    <>
+      <Button size="xs" variant="default" leftSection={<IconRestore size={14} />} onClick={open}>
+        {t('admin.deleted.restore')}
+      </Button>
+
+      <Modal opened={opened} onClose={() => setOpened(false)} title={`${t('admin.deleted.restore')} — ${page.title}`}>
+        <Stack>
+          <TextInput
+            label={t('admin.deleted.restoreTo')}
+            description={t('admin.deleted.restoreToHint')}
+            value={target}
+            error={failure}
+            onChange={(event) => {
+              setTarget(event.currentTarget.value);
+              setFailure(null);
+            }}
+            data-autofocus
+            required
+          />
+
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setOpened(false)}>
+              {t('app.cancel')}
+            </Button>
+            <Button onClick={() => restore.mutate()} loading={restore.isPending} disabled={target.trim().length === 0}>
+              {t('admin.deleted.restore')}
             </Button>
           </Group>
         </Stack>

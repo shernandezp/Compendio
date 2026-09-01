@@ -166,7 +166,9 @@
     "changeTitle": "Change title",
     "titleChanged": "The title has been changed.",
     "titleLabel": "Title",
-    "newTitle": "What is this page about?"
+    "newTitle": "What is this page about?",
+    "template": "Template",
+    "templateHint": "A starting shape. Delete anything you do not need."
   },
   "editor": {
     "placeholder": "Write here. Press / for a menu.",
@@ -418,7 +420,20 @@
       "lastError": "The last push failed: {{detail}}",
       "pushNow": "Push now"
     },
-    "integrations": "Integrations"
+    "integrations": "Integrations",
+    "deleted": {
+      "title": "Deleted pages",
+      "intro": "Pages whose file was deleted but whose history is still kept. Restoring brings the last version back, with its whole history, where the page was.",
+      "empty": "No deleted pages are waiting to be restored.",
+      "path": "Where it was",
+      "deletedAt": "Deleted",
+      "versions": "Versions",
+      "restore": "Restore",
+      "restoreTo": "Restore to",
+      "restoreToHint": "Leave as it is to put the page back where it was. Change it if something else is there now.",
+      "restored": "The page is back: {{path}}",
+      "exists": "Something is already at that path. Choose another one."
+    }
   },
   "about": {
     "title": "About Compendio",

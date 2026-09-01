@@ -13,6 +13,11 @@ namespace Compendio.Application.Pages;
 
 /// <param name="FolderPath">Where it goes. The empty string is the root.</param>
 /// <param name="Content">Canonical Markdown from the editor, or null to start from a template.</param>
+/// <param name="TemplateId">
+/// A template from the catalogue (<c>procedure</c>, <c>runbook</c>, an organization's own from
+/// <c>_templates/</c>). Used only when <paramref name="Content"/> carries no body: text the caller
+/// wrote always wins over a starting shape.
+/// </param>
 public sealed record CreatePageCommand(
     string FolderPath,
     string Title,
@@ -28,6 +33,7 @@ public sealed class CreatePageHandler(
     IPermissionEvaluator permissions,
     ICurrentUser currentUser,
     PageProjection projection,
+    ISender sender,
     IOptions<CompendioOptions> options) : IRequestHandler<CreatePageCommand, PageDto>
 {
     public async Task<PageDto> Handle(CreatePageCommand request, CancellationToken cancellationToken = default)
@@ -41,14 +47,16 @@ public sealed class CreatePageHandler(
         await permissions.RequireWriteAsync(currentUser.Subject, folder, cancellationToken);
 
         // The accented title lives in front matter; the file name is ASCII-slugified so the content
-        // survives an SMB share, a zip round-trip and a git client on another platform.
-        var fileName = Slug.Disambiguate(
-            Slug.CreateFileName(request.Title),
-            candidate => store.Exists(folder.Append(candidate)));
+        // survives an SMB share, a zip round-trip and a git client on another platform. Collisions
+        // are checked ignoring case, because the same folder may be served from a Windows share
+        // tomorrow, where Index.md and index.md are one file.
+        var taken = store.EntryNames(folder);
+        var fileName = Slug.Disambiguate(Slug.CreateFileName(request.Title), taken.Contains);
 
         var path = paths.Require(folder.Append(fileName).Value, PathKind.Page);
 
-        var bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(BuildContent(request));
+        var body = await ResolveBodyAsync(request, cancellationToken);
+        var bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(BuildContent(request, body));
 
         var page = await pipeline.SavePageAsync(path, bytes, expectedHash: null, currentUser.UserId,
             VersionSource.Editor, note: null, cancellationToken);
@@ -72,13 +80,35 @@ public sealed class CreatePageHandler(
     /// fills a gap, it does not overwrite an answer.
     /// </para>
     /// </remarks>
-    private string BuildContent(CreatePageCommand request)
+    /// <summary>
+    /// The caller's content, or the chosen template's body when the caller sent none.
+    /// </summary>
+    /// <remarks>
+    /// The catalogue is the same one the AI draft reads — bundled entries and <c>_templates/</c>
+    /// overrides — so the page the editor starts from and the shape a draft follows cannot drift
+    /// apart. An unknown id falls back to an empty page rather than failing: the template is a
+    /// convenience, and refusing to create a page over it would be the wrong severity.
+    /// </remarks>
+    private async Task<string> ResolveBodyAsync(CreatePageCommand request, CancellationToken cancellationToken)
     {
-        var document = MarkdownParser.Parse(request.Content ?? string.Empty);
+        if (!string.IsNullOrWhiteSpace(request.Content) || string.IsNullOrWhiteSpace(request.TemplateId))
+        {
+            return request.Content ?? string.Empty;
+        }
+
+        var templates = await sender.Send(new Admin.GetTemplatesQuery(), cancellationToken);
+        var template = templates.FirstOrDefault(t => string.Equals(t.Id, request.TemplateId, StringComparison.OrdinalIgnoreCase));
+
+        return template?.Content ?? string.Empty;
+    }
+
+    private string BuildContent(CreatePageCommand request, string content)
+    {
+        var document = MarkdownParser.Parse(content);
 
         if (!string.IsNullOrWhiteSpace(document.FrontMatter.Title))
         {
-            return request.Content!;
+            return content;
         }
 
         var frontMatter = document.FrontMatter with

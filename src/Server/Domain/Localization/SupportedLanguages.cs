@@ -45,6 +45,18 @@ public static class SupportedLanguages
     public static bool IsSupported(string? code) => TryResolve(code, out _);
 
     /// <summary>
+    /// Whether a page language is the reference text translations are made from.
+    /// </summary>
+    /// <remarks>
+    /// English, or no language at all — a page that does not say what it is written in is treated as
+    /// the original. Stated once, here, because two places ask it: the notifier that tells a
+    /// translation's owner the source moved, and the banner on the translation itself. If they
+    /// disagreed, the owner would be told about a change the page did not show, or the reverse.
+    /// </remarks>
+    public static bool IsReference(string? lang) =>
+        string.IsNullOrWhiteSpace(lang) || string.Equals(lang.Trim(), English, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Matches with BCP-47 fallback: <c>es-MX</c> resolves to <c>es</c>. Case-insensitive, because
     /// <c>Accept-Language</c> and hand-typed <c>?lang=</c> values are not consistent about it.
     /// </summary>

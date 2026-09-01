@@ -4,9 +4,7 @@ using Compendio.Application.Common;
 using Compendio.Domain.Content;
 using Compendio.Domain.Entities;
 using Compendio.Domain.Security;
-using Compendio.Hosting.Configuration;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Compendio.Application.Admin;
 
@@ -185,7 +183,7 @@ public sealed class EffectiveAccessHandler(
     IPermissionEvaluator permissions,
     ISecureScopeRegistry secureScopes,
     ICurrentUser currentUser,
-    IOptions<CompendioOptions> options) : IRequestHandler<EffectiveAccessQuery, EffectiveAccessDto>
+    IInstanceSettings instance) : IRequestHandler<EffectiveAccessQuery, EffectiveAccessDto>
 {
     public async Task<EffectiveAccessDto> Handle(EffectiveAccessQuery request, CancellationToken cancellationToken = default)
     {
@@ -256,6 +254,9 @@ public sealed class EffectiveAccessHandler(
             }
         }
 
-        return level == options.Value.Instance.DefaultAccess ? "instance.default" : "inherited";
+        // The wizard's answer, not the config file's: the evaluator decides from the stored setting,
+        // and an explanation that read a different source would name the wrong rule on an instance
+        // set up as "nobody by default".
+        return level == instance.DefaultAccess ? "instance.default" : "inherited";
     }
 }

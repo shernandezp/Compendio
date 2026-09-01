@@ -21,8 +21,8 @@ public sealed class SecureContentTests : IAsyncLifetime
     private const string Secret = "Zx7-QUETZAL-ROUTER-PASSPHRASE-9931";
 
     private const string SecureFolder = "Secretos";
-    private const string SecurePage = "Secretos/router.md";
-    private const string PublicPage = "Publico/aviso.md";
+    private const string SecurePage = "Secretos/Router.md";
+    private const string PublicPage = "Publico/Aviso.md";
 
     private static JsonSerializerOptions Json => CompendioApplication.Json;
 
@@ -88,6 +88,35 @@ public sealed class SecureContentTests : IAsyncLifetime
         {
             // A handle can outlive the host on Windows; a leftover temp folder is not worth failing.
         }
+    }
+
+    /// <summary>
+    /// Files-first is suspended inside a secure scope, and the design note says what happens when
+    /// somebody ignores that: a plaintext page appearing in the folder is encrypted and the plaintext
+    /// removed. Until this test existed, it was recorded as a secure page and left on disk in the
+    /// clear.
+    /// </summary>
+    [Fact]
+    public async Task APlaintextPageDroppedIntoTheFolderIsEncryptedOnIngest()
+    {
+        const string dropped = "Secretos/dropped.md";
+        const string needle = "Qp4-DROPPED-IN-CLEAR-2277";
+
+        await _app.WriteFileAsync(dropped, $"---\ntitle: Dropped\n---\n\n{needle}\n");
+
+        var reconcile = await _admin.PostAsync("/api/v1/admin/reconcile", content: null, Ct);
+        reconcile.EnsureSuccessStatusCode();
+
+        _app.FileExists(dropped).ShouldBeFalse("the plaintext should have been removed");
+        _app.FileExists(dropped + ".enc").ShouldBeTrue("the page should now be an envelope");
+
+        var page = await _admin.GetFromJsonAsync<JsonElement>($"/api/v1/pages/{dropped}", Json, Ct);
+        page.GetProperty("isSecure").GetBoolean().ShouldBeTrue();
+        page.GetProperty("content").GetString()!.ShouldContain(needle);
+
+        // And the envelope really is one: the secret is not in it.
+        var onDisk = await File.ReadAllBytesAsync(Path.Combine(_app.ContentRoot, "Secretos", "dropped.md.enc"), Ct);
+        onDisk.AsSpan().IndexOf(Encoding.UTF8.GetBytes(needle)).ShouldBe(-1);
     }
 
     [Fact]
@@ -222,7 +251,7 @@ public sealed class SecureContentTests : IAsyncLifetime
 
         results.GetProperty("totalCount").GetInt32().ShouldBeGreaterThan(0);
         results.GetProperty("items").EnumerateArray()
-            .ShouldContain(hit => hit.GetProperty("path").GetString() == $"{SecureFolder}/interno/switch.md");
+            .ShouldContain(hit => hit.GetProperty("path").GetString() == $"{SecureFolder}/interno/Switch.md");
     }
 
     private async Task WaitForIndexAsync()

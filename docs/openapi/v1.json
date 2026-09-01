@@ -453,6 +453,20 @@
           "Manage"
         ]
       },
+      "RestoreDeletedPageBody": {
+        "properties": {
+          "targetPath": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "targetPath"
+        ],
+        "type": "object"
+      },
       "RestoreRequest": {
         "properties": {
           "path": {
@@ -1088,6 +1102,60 @@
             "description": "OK"
           }
         },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/deleted-pages": {
+      "get": {
+        "operationId": "ListDeletedPages",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/deleted-pages/{pageId}/restore": {
+      "post": {
+        "operationId": "RestoreDeletedPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pageId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RestoreDeletedPageBody"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Brings a deleted page back, with its history, where it was or at the given path.",
         "tags": [
           "Admin"
         ]

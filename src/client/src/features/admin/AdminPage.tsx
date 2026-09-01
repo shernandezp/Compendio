@@ -7,7 +7,15 @@ import { api } from '../../lib/api';
 import { formatBytes, formatDate, formatNumber } from '../../lib/format';
 import { SecureScopes } from './SecureScopes';
 import { AiSettingsPanel, GitMirrorPanel } from './AiSettingsPanel';
-import { AddGroupButton, AddPersonButton, CreateBackupButton, EditPersonButton, ManageGroupMembersButton, RenameGroupButton } from './AdminActions';
+import {
+  AddGroupButton,
+  AddPersonButton,
+  CreateBackupButton,
+  EditPersonButton,
+  ManageGroupMembersButton,
+  RenameGroupButton,
+  RestoreDeletedPageButton,
+} from './AdminActions';
 
 /**
  * Administration.
@@ -25,6 +33,7 @@ export function AdminPage() {
   const users = useQuery({ queryKey: ['users'], queryFn: api.users });
   const groups = useQuery({ queryKey: ['groups'], queryFn: api.groups });
   const audit = useQuery({ queryKey: ['audit'], queryFn: () => api.auditLog() });
+  const deleted = useQuery({ queryKey: ['deleted-pages'], queryFn: api.deletedPages });
 
   const reindex = useMutation({
     mutationFn: api.reindex,
@@ -53,6 +62,7 @@ export function AdminPage() {
           <Tabs.Tab value="groups">{t('admin.groups')}</Tabs.Tab>
           <Tabs.Tab value="secure">{t('admin.secure')}</Tabs.Tab>
           <Tabs.Tab value="integrations">{t('admin.integrations')}</Tabs.Tab>
+          <Tabs.Tab value="deleted">{t('admin.deleted.title')}</Tabs.Tab>
           <Tabs.Tab value="audit">{t('admin.audit.title')}</Tabs.Tab>
         </Tabs.List>
 
@@ -162,6 +172,50 @@ export function AdminPage() {
           <Stack gap="lg">
             <AiSettingsPanel />
             <GitMirrorPanel />
+          </Stack>
+        </Tabs.Panel>
+
+        {/* The recovery the guide promises and the version tombstones exist for. A page deleted from
+            the tree — or by a mis-synced backup client — is listed here until its history ages out. */}
+        <Tabs.Panel value="deleted" pt="md">
+          <Stack gap="sm">
+            <Text size="sm" c="dimmed">
+              {t('admin.deleted.intro')}
+            </Text>
+            {deleted.isPending ? (
+              <Loader />
+            ) : (deleted.data ?? []).length === 0 ? (
+              <Text size="sm" c="dimmed">
+                {t('admin.deleted.empty')}
+              </Text>
+            ) : (
+              <Table striped highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>{t('page.titleLabel')}</Table.Th>
+                    <Table.Th>{t('admin.deleted.path')}</Table.Th>
+                    <Table.Th>{t('admin.deleted.deletedAt')}</Table.Th>
+                    <Table.Th>{t('admin.deleted.versions')}</Table.Th>
+                    <Table.Th />
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {(deleted.data ?? []).map((page) => (
+                    <Table.Tr key={page.pageId}>
+                      <Table.Td>{page.title}</Table.Td>
+                      <Table.Td ff="monospace" style={{ wordBreak: 'break-all' }}>
+                        {page.path}
+                      </Table.Td>
+                      <Table.Td>{formatDate(page.deletedAt, i18n.language)}</Table.Td>
+                      <Table.Td>{formatNumber(page.versions, i18n.language)}</Table.Td>
+                      <Table.Td ta="right">
+                        <RestoreDeletedPageButton page={page} />
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            )}
           </Stack>
         </Tabs.Panel>
 

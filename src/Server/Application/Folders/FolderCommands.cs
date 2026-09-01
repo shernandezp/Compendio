@@ -24,7 +24,10 @@ public sealed class CreateFolderHandler(
         var parent = paths.Require(request.ParentPath, PathKind.Folder);
         await permissions.RequireWriteAsync(currentUser.Subject, parent, cancellationToken);
 
-        var folderName = Slug.Disambiguate(Slug.Create(request.Name), candidate => store.FolderExists(parent.Append(candidate)));
+        // Case is kept — "Infrastructure" is the folder the person named, and the tree shows the
+        // disk — but the collision check ignores it, because a Windows share would.
+        var taken = store.EntryNames(parent);
+        var folderName = Slug.Disambiguate(Slug.Create(request.Name), taken.Contains);
         var path = paths.Require(parent.Append(folderName).Value, PathKind.Folder);
 
         var folder = await pipeline.EnsureFolderAsync(path, cancellationToken);
@@ -73,7 +76,9 @@ public sealed class MoveFolderHandler(
         await permissions.RequireManageAsync(currentUser.Subject, from, cancellationToken);
         await permissions.RequireWriteAsync(currentUser.Subject, to.Parent, cancellationToken);
 
-        if (store.FolderExists(to))
+        // "it" → "IT" finds itself at the destination on a case-insensitive disk. The store knows
+        // how to tell that apart from a real collision; this check does not, so it steps aside.
+        if (!to.IsCaseVariantOf(from) && store.FolderExists(to))
         {
             throw CompendioException.Exists(to);
         }

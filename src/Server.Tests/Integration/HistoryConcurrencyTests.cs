@@ -29,7 +29,7 @@ namespace Compendio.Tests.Integration;
 [Collection(nameof(CompendioCollection))]
 public sealed class HistoryConcurrencyTests(CompendioApplication app) : IAsyncLifetime
 {
-    private const string Path = "Concurrency/racing.md";
+    private const string Path = "Concurrency/Racing.md";
 
     private static JsonSerializerOptions Json => CompendioApplication.Json;
 
