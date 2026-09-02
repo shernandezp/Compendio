@@ -297,6 +297,16 @@ export interface AuditEntry {
   targetPath: string;
 }
 
+/** A page whose file is gone and whose history is still held. Administrators only. */
+export interface DeletedPage {
+  pageId: string;
+  path: string;
+  title: string;
+  deletedAt: string;
+  lastVersionAt: string;
+  versions: number;
+}
+
 export interface Status {
   version: string;
   installMode: string;
@@ -476,7 +486,11 @@ export const api = {
   tree: () => get<Tree>('/api/v1/tree'),
 
   page: (path: string, raw = false) => get<Page>(`/api/v1/pages/${encodePath(path)}${raw ? '?raw=true' : ''}`),
-  createPage: (body: { folderPath: string; title: string; content?: string; lang?: string }) =>
+  /**
+   * `templateId` is the starting shape when `content` is empty; text the person wrote always wins.
+   * The ids come from `templates()` — bundled ones plus an organization's own `_templates/`.
+   */
+  createPage: (body: { folderPath: string; title: string; content?: string; lang?: string; templateId?: string }) =>
     post<Page>('/api/v1/pages', body),
   /**
    * @param materialRevision The editor's explicit "everyone must read this again". Default off, so
@@ -540,6 +554,12 @@ export const api = {
   reconcile: () => post<void>('/api/v1/admin/reconcile'),
   createBackup: (passphrase?: string) =>
     post<BackupResult>('/api/v1/admin/backup', passphrase ? { passphrase } : {}),
+
+  // ---- Deleted pages. The recovery the version tombstones exist for. --------------------------
+  deletedPages: () => get<DeletedPage[]>('/api/v1/admin/deleted-pages'),
+  /** Restores where the page was, or at `targetPath` when something else now lives there. */
+  restoreDeletedPage: (pageId: string, targetPath?: string) =>
+    post<Page>(`/api/v1/admin/deleted-pages/${pageId}/restore`, targetPath ? { targetPath } : {}),
 
   languages: () => get<{ code: string; englishName: string; nativeName: string }[]>('/api/v1/languages'),
   about: () => get<{ product: string; version: string; license: string; sourceUrl: string; licenseNotice: string; instanceName: string }>('/api/v1/about'),

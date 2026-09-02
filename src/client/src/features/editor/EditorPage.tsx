@@ -10,6 +10,7 @@ import {
   Loader,
   Modal,
   SegmentedControl,
+  Select,
   Stack,
   Text,
   Textarea,
@@ -164,6 +165,31 @@ export function EditorPage() {
     enabled: !isNew,
     retry: false,
   });
+
+  /**
+   * The template picker, on a new page only.
+   *
+   * The guide has always offered one — Procedure, Runbook, Policy, Meeting notes — and the catalogue
+   * is what the AI draft already reads, so a page started from a template and a draft asked to
+   * follow one share the same shape. Choosing one replaces the buffer, through the revision counter,
+   * so the editor shows it; it is offered while the page is still empty, because replacing a
+   * paragraph somebody typed with a skeleton is not what "template" means.
+   */
+  const templates = useQuery({
+    queryKey: ['templates'],
+    queryFn: api.templates,
+    staleTime: 5 * 60 * 1000,
+    enabled: isNew,
+  });
+  const [templateId, setTemplateId] = useState<string | null>(null);
+
+  function applyTemplate(id: string | null) {
+    setTemplateId(id);
+    const template = (templates.data ?? []).find((candidate) => candidate.id === id);
+    replaceContent(template?.content ?? '');
+    // A skeleton is not something to warn about losing.
+    setDirty(false);
+  }
 
   useEffect(() => {
     if (!page.data) {
@@ -374,14 +400,34 @@ export function EditorPage() {
       )}
 
       {isNew && (
-        <TextInput
-          label={t('page.titleLabel')}
-          placeholder={t('page.newTitle')}
-          value={title}
-          onChange={(event) => setTitle(event.currentTarget.value)}
-          required
-          autoFocus
-        />
+        <Group align="flex-end" grow>
+          <TextInput
+            label={t('page.titleLabel')}
+            placeholder={t('page.newTitle')}
+            value={title}
+            onChange={(event) => setTitle(event.currentTarget.value)}
+            required
+            autoFocus
+          />
+          <Select
+            label={t('page.template')}
+            description={t('page.templateHint')}
+            placeholder={t('template.blank')}
+            value={templateId}
+            onChange={applyTemplate}
+            // Once something has been typed the choice is closed: a template is a starting shape,
+            // not a way to lose a paragraph.
+            disabled={dirty && content.trim().length > 0}
+            clearable
+            data={(templates.data ?? [])
+              .filter((template) => template.id !== 'blank')
+              .map((template) => ({
+                value: template.id,
+                // Bundled titles are i18n keys; an organization's own are literal text.
+                label: t(template.title, { defaultValue: template.title }),
+              }))}
+          />
+        </Group>
       )}
 
       {mode === 'rich' ? (

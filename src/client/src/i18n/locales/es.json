@@ -166,7 +166,9 @@
     "changeTitle": "Cambiar el título",
     "titleChanged": "Se ha cambiado el título.",
     "titleLabel": "Título",
-    "newTitle": "¿De qué trata esta página?"
+    "newTitle": "¿De qué trata esta página?",
+    "template": "Plantilla",
+    "templateHint": "Una forma de partida. Borra lo que no necesites."
   },
   "editor": {
     "placeholder": "Escribe aquí. Pulsa / para ver el menú.",
@@ -418,7 +420,20 @@
       "lastError": "El último envío falló: {{detail}}",
       "pushNow": "Enviar ahora"
     },
-    "integrations": "Integraciones"
+    "integrations": "Integraciones",
+    "deleted": {
+      "title": "Páginas eliminadas",
+      "intro": "Páginas cuyo archivo se eliminó pero cuyo historial se conserva. Restaurar devuelve la última versión, con todo su historial, al lugar donde estaba la página.",
+      "empty": "No hay páginas eliminadas pendientes de restaurar.",
+      "path": "Dónde estaba",
+      "deletedAt": "Eliminada",
+      "versions": "Versiones",
+      "restore": "Restaurar",
+      "restoreTo": "Restaurar en",
+      "restoreToHint": "Déjalo como está para devolver la página a su sitio. Cámbialo si ahora hay otra cosa ahí.",
+      "restored": "La página ha vuelto: {{path}}",
+      "exists": "Ya hay algo en esa ruta. Elige otra."
+    }
   },
   "about": {
     "title": "Acerca de Compendio",

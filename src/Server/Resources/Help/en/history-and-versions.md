@@ -36,7 +36,13 @@ what happened stays complete.
 
 ## Deleted pages
 
-Deleting a page removes the file but keeps the history. An administrator can bring it back.
+Deleting a page removes the file but keeps the history. An administrator can bring it back from
+**Administration → Deleted pages**: the page returns where it was, with its last text and its whole
+history, and the restore itself appears in that history. If something else has been created at the
+old path in the meantime, the administrator chooses another one.
+
+History of a deleted page is kept for a retention period set by the administrator; after that it is
+removed for good.
 
 ## Where this is really kept
 

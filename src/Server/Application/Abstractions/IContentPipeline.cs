@@ -53,6 +53,20 @@ public interface IContentPipeline
 
     Task<Page> MovePageAsync(ContentPath from, ContentPath to, Guid? actorUserId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Brings a deleted page back, under its original identity.
+    /// </summary>
+    /// <param name="pageId">The deleted page — the id its tombstoned versions are keyed by.</param>
+    /// <param name="path">Where it lands. Normally where it was; another path when that is taken.</param>
+    /// <param name="content">The bytes to write — the last version's, decoded by the caller.</param>
+    /// <remarks>
+    /// Writing the content as a new page would work and would lose everything the tombstones were
+    /// kept for: the versions would stay keyed to an id nothing points at, and the restored page
+    /// would have a history one entry long. The row is re-created with the old id first, the
+    /// versions are revived, and the write then lands as one more version on the existing history.
+    /// </remarks>
+    Task<Page> RestoreDeletedPageAsync(Guid pageId, ContentPath path, byte[] content, Guid? actorUserId, CancellationToken cancellationToken = default);
+
     Task<Folder> EnsureFolderAsync(ContentPath path, CancellationToken cancellationToken = default);
 
     Task DeleteFolderAsync(ContentPath path, Guid? actorUserId, CancellationToken cancellationToken = default);

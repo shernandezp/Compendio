@@ -69,6 +69,16 @@ public interface IPageHistory
     Task TombstoneAsync(Guid pageId, DateTimeOffset at, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Clears the tombstones on a deleted page's versions, when the page is brought back.
+    /// </summary>
+    /// <remarks>
+    /// The inverse of <see cref="TombstoneAsync"/>, and the reason a restore keeps the page's
+    /// identity: the versions are keyed by it, so reviving them under the same id gives the restored
+    /// page its whole history rather than a fresh one starting at the restore.
+    /// </remarks>
+    Task ReviveAsync(Guid pageId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Thins history: everything inside the retention window, then one per day, never below the
     /// floor. Purges expired tombstones.
     /// </summary>

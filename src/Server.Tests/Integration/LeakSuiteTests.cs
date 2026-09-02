@@ -27,8 +27,8 @@ namespace Compendio.Tests.Integration;
 public sealed class LeakSuiteTests(CompendioApplication app) : IAsyncLifetime
 {
     private const string RestrictedFolder = "Legal";
-    private const string RestrictedPage = "Legal/acquisition-northwind.md";
-    private const string PublicPage = "Public/announcement.md";
+    private const string RestrictedPage = "Legal/Acquisition-Northwind.md";
+    private const string PublicPage = "Public/Announcement.md";
     private const string Secret = "Northwind";
 
     private static JsonSerializerOptions Json => CompendioApplication.Json;
@@ -260,7 +260,7 @@ public sealed class LeakSuiteTests(CompendioApplication app) : IAsyncLifetime
     {
         // A page the outsider genuinely may write, so the write check passes and the only thing
         // standing between them and the restricted content is the version-to-page binding.
-        const string ownPage = "Sandbox/bruno-notes.md";
+        const string ownPage = "Sandbox/Bruno-notes.md";
         await EnsurePageAsync("Sandbox", "Bruno notes", "---\ntitle: Bruno notes\n---\n\nMine.\n", ownPage);
 
         var users = await _admin.GetFromJsonAsync<JsonElement>("/api/v1/admin/users", Json, Ct);

@@ -33,7 +33,7 @@ namespace Compendio.Tests.Integration;
 public sealed class GitMirrorTests(CompendioApplication app) : IAsyncLifetime
 {
     private const string SecureFolder = "GitVault";
-    private const string SecurePage = "GitVault/wifi.md";
+    private const string SecurePage = "GitVault/Wifi.md";
     private const string Plaintext = "correct-horse-battery-staple";
 
     private static JsonSerializerOptions Json => CompendioApplication.Json;
@@ -69,8 +69,8 @@ public sealed class GitMirrorTests(CompendioApplication app) : IAsyncLifetime
             .Where(f => !f.Replace('\\', '/').Contains("/.git/", StringComparison.Ordinal))
             .ToArray();
 
-        files.ShouldContain(f => f.EndsWith("wifi.md.enc", StringComparison.Ordinal));
-        files.ShouldNotContain(f => f.EndsWith("wifi.md", StringComparison.Ordinal));
+        files.ShouldContain(f => f.EndsWith("Wifi.md.enc", StringComparison.Ordinal));
+        files.ShouldNotContain(f => f.EndsWith("Wifi.md", StringComparison.Ordinal));
 
         // And the secret is nowhere in the bytes of anything that was pushed. A name check alone
         // would pass if the plaintext had also been committed somewhere else in the tree.

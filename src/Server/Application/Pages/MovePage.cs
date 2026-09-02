@@ -31,7 +31,9 @@ public sealed class MovePageHandler(
             throw CompendioException.NotFound(from);
         }
 
-        if (store.Exists(to))
+        // A rename that only changes case finds itself at the destination on a case-insensitive
+        // disk; the store distinguishes that from a real collision, so the check is left to it.
+        if (!to.IsCaseVariantOf(from) && store.Exists(to))
         {
             throw CompendioException.Exists(to);
         }

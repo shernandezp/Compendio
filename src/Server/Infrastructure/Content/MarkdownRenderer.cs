@@ -142,7 +142,7 @@ public sealed partial class MarkdownRenderer : Application.Abstractions.IMarkdow
         foreach (var block in ast.Descendants<HeadingBlock>())
         {
             var text = block.Inline is null ? string.Empty : InlineText(block.Inline);
-            var id = block.GetAttributes().Id ?? Slug.Create(text);
+            var id = block.GetAttributes().Id ?? Slug.Anchor(text);
             headings.Add(new HeadingAnchor(block.Level, text, id));
         }
 

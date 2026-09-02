@@ -54,9 +54,8 @@ public sealed class UploadAttachmentHandler(
             throw CompendioException.BadRequest(ProblemCodes.AttachmentLimitReached, _attachments.MaxPerPage);
         }
 
-        var safeName = Slug.Disambiguate(
-            SafeFileName(request.FileName),
-            candidate => store.Exists(pagePath.Parent.Append(CompendioConstants.AssetsFolderName).Append(candidate)));
+        var assets = pagePath.Parent.Append(CompendioConstants.AssetsFolderName);
+        var safeName = Slug.Disambiguate(SafeFileName(request.FileName), store.EntryNames(assets).Contains);
 
         var extension = Path.GetExtension(safeName).ToLowerInvariant();
 
@@ -76,7 +75,6 @@ public sealed class UploadAttachmentHandler(
             throw CompendioException.BadRequest(ProblemCodes.AttachmentTypeNotAllowed, extension);
         }
 
-        var assets = pagePath.Parent.Append(CompendioConstants.AssetsFolderName);
         var target = paths.Require(assets.Append(safeName).Value, PathKind.Attachment);
 
         await store.CreateFolderAsync(assets, cancellationToken);
@@ -101,7 +99,7 @@ public sealed class UploadAttachmentHandler(
 
     /// <summary>
     /// Slugifies the stem but keeps the extension, so <c>Informe Anual.PDF</c> becomes
-    /// <c>informe-anual.pdf</c> and stays openable.
+    /// <c>Informe-Anual.pdf</c> and stays openable.
     /// </summary>
     private static string SafeFileName(string fileName)
     {

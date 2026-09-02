@@ -100,6 +100,17 @@ public readonly record struct ContentPath : IComparable<ContentPath>
 
     public bool IsSelfOrUnder(ContentPath ancestor) => Value == ancestor.Value || IsUnder(ancestor);
 
+    /// <summary>
+    /// Whether this path and <paramref name="other"/> spell the same name in different letter case.
+    /// </summary>
+    /// <remarks>
+    /// The rename-by-case case: <c>it</c> → <c>IT</c>, <c>index.md</c> → <c>Index.md</c>. On a
+    /// case-insensitive file system the destination "exists" because it <em>is</em> the source, and
+    /// a naive exists-check refuses the one rename the user most obviously meant.
+    /// </remarks>
+    public bool IsCaseVariantOf(ContentPath other) =>
+        Value != other.Value && string.Equals(Value, other.Value, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Appends a single already-validated segment.</summary>
     public ContentPath Append(string segment) =>
         IsRoot ? new ContentPath(segment) : new ContentPath($"{Value}/{segment}");

@@ -88,6 +88,18 @@ public static class AdminEndpoints
         admin.MapPost("/reconcile", async (Engine.Reconciler reconciler, CancellationToken ct) =>
             Results.Ok(await reconciler.RunAsync(ct)));
 
+        // ---- Deleted pages -----------------------------------------------------------------------
+        // The recovery the tombstones exist for. A page's versions outlive its file for the history
+        // retention window; this is how an administrator gets the page back, history and all.
+        admin.MapGet("/deleted-pages", async (ISender sender, CancellationToken ct) =>
+                Results.Ok(await sender.Send(new ListDeletedPagesQuery(), ct)))
+            .WithName("ListDeletedPages");
+
+        admin.MapPost("/deleted-pages/{pageId:guid}/restore", async (Guid pageId, RestoreDeletedPageBody? body, ISender sender, CancellationToken ct) =>
+                Results.Ok(await sender.Send(new RestoreDeletedPageCommand(pageId, body?.TargetPath), ct)))
+            .WithName("RestoreDeletedPage")
+            .WithSummary("Brings a deleted page back, with its history, where it was or at the given path.");
+
         // A server-side backup, written to the data directory's backups folder under a timestamped
         // name. The path is never taken from the caller — the API only ever writes here, so a
         // request cannot direct the archive somewhere it should not go.
@@ -134,6 +146,8 @@ public sealed record SetPasswordBody(string NewPassword);
 public sealed record CreateGroupBody(string Name);
 
 public sealed record BackupBody(string? Passphrase);
+
+public sealed record RestoreDeletedPageBody(string? TargetPath);
 
 public sealed record UpdateGroupBody(string? Name, bool? Active, IReadOnlyList<Guid>? MemberIds);
 

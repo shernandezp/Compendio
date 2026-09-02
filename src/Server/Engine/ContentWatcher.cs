@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Compendio.Application.Abstractions;
+using Compendio.Domain;
 using Compendio.Domain.Content;
 using Compendio.Hosting;
 using Compendio.Hosting.Configuration;
@@ -155,6 +156,15 @@ public sealed class ContentWatcher(
 
     private void Enqueue(string fullPath)
     {
+        // An envelope is reported under the page's logical path, the same way the reconciler's walk
+        // reports it. Queued as "x.md.enc" the change was classified by its extension as an
+        // attachment outside assets/ and dropped, so a secure page restored from a backup while the
+        // service ran was not noticed until the next full pass.
+        if (fullPath.EndsWith(CompendioConstants.EncryptedExtension, StringComparison.OrdinalIgnoreCase))
+        {
+            fullPath = fullPath[..^CompendioConstants.EncryptedExtension.Length];
+        }
+
         if (paths.TryMap(fullPath, PathKind.Any, out var path) && !PathPolicy.IsIgnored(path.Value))
         {
             _pending[path.Value.Value] = clock.UtcNow;

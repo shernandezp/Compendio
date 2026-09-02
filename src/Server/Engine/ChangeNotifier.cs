@@ -71,8 +71,7 @@ public sealed class ChangeNotifier(
             return;
         }
 
-        var reference = Domain.Localization.SupportedLanguages.English;
-        if (page.Lang is { Length: > 0 } lang && !string.Equals(lang, reference, StringComparison.OrdinalIgnoreCase))
+        if (!Domain.Localization.SupportedLanguages.IsReference(page.Lang))
         {
             return;
         }

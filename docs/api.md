@@ -112,7 +112,7 @@ your effective level. Nodes you cannot read are **absent**, not present-and-grey
 | | |
 |---|---|
 | `GET /pages/{*path}?raw=true` | `raw` skips rendering and returns Markdown only. What the editor asks for. |
-| `POST /pages` | `{ folderPath, title, content?, lang?, translationKey? }`. The file name is slugified from the title; the accented title lives in front matter. |
+| `POST /pages` | `{ folderPath, title, content?, templateId?, lang?, translationKey? }`. The file name is slugified from the title — accents dropped, letter case kept, so "Índice" is `Indice.md` — and the accented title lives in front matter. A name that differs from an existing one only by case gets a `-2` suffix, because the folder may be a Windows share tomorrow. `templateId` names an entry from `GET /templates` and is the starting body when `content` is empty. |
 | `PUT /pages/{*path}` | `{ content, expectedHash, normalized?, note? }`. `expectedHash` is required. |
 | `DELETE /pages/{*path}` | The file is removed; its history is tombstoned for the retention window. |
 | `POST /pages/move` | `{ path, targetPath }` |
@@ -201,6 +201,9 @@ Restoring writes a **new** version rather than rewinding, so a mistaken restore 
 An external edit is recorded as an external edit, timestamped from the file and attributed to
 nobody — never to whoever happened to be signed in.
 
+Deleting a page tombstones its versions for `History:DeletedRetentionDays` instead of dropping them.
+Bringing the page back is an administrator's action — see *Deleted pages* under Administration.
+
 ### Access rules
 
 | | |
@@ -227,6 +230,18 @@ Requires the `Admin` role.
 
 There must always be one active administrator. Every path that could break that — demote,
 deactivate, delete — returns `acl.last_admin` instead.
+
+#### Deleted pages
+
+| | |
+|---|---|
+| `GET /admin/deleted-pages` | Pages whose file is gone and whose history is still held: id, last path, title, when it was deleted, how many versions. |
+| `POST /admin/deleted-pages/{pageId}/restore` | `{ targetPath? }`. Writes the last version back where the page was, or at `targetPath`. `path.exists` when something now lives there. |
+
+A restore keeps the page's identity, so every earlier version becomes its history again and the
+restore itself is one more entry in it, after the delete. Both the file and the row come back
+through the ordinary pipeline, so search, permissions and acknowledgments see a page, not a special
+case.
 
 ### Lifecycle
 

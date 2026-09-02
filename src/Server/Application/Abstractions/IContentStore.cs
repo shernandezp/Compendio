@@ -42,6 +42,18 @@ public interface IContentStore
 
     bool FolderExists(ContentPath path);
 
+    /// <summary>
+    /// The logical names directly inside a folder — files with any <c>.enc</c> suffix removed, and
+    /// sub-folders — compared case-insensitively.
+    /// </summary>
+    /// <remarks>
+    /// For choosing a new name. <see cref="Exists"/> answers the file system's question, which on
+    /// Windows ignores case and on Linux does not; a name picked against that answer on Linux can
+    /// collide the moment the folder is copied to a Windows share. Empty when the folder does not
+    /// exist yet.
+    /// </remarks>
+    IReadOnlySet<string> EntryNames(ContentPath folder);
+
     Task<ContentFile?> ReadAsync(ContentPath path, CancellationToken cancellationToken = default);
 
     /// <summary>

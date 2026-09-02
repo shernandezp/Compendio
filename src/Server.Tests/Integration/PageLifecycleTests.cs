@@ -36,12 +36,12 @@ public sealed class PageLifecycleTests(CompendioApplication app)
 
         var page = await response.Content.ReadFromJsonAsync<PageResponse>(Json, Ct);
 
-        // The accented title lives in front matter; the file name is ASCII-slugified.
-        page!.Path.ShouldBe("IT/politica-de-teletrabajo.md");
+        // The accented title lives in front matter; the file name is ASCII-slugified, case kept.
+        page!.Path.ShouldBe("IT/Politica-de-teletrabajo.md");
         page.Title.ShouldBe("Política de teletrabajo");
 
-        app.FileExists("IT/politica-de-teletrabajo.md").ShouldBeTrue();
-        app.ReadFile("IT/politica-de-teletrabajo.md").ShouldContain("Contenido.");
+        app.FileExists("IT/Politica-de-teletrabajo.md").ShouldBeTrue();
+        app.ReadFile("IT/Politica-de-teletrabajo.md").ShouldContain("Contenido.");
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public sealed class PageLifecycleTests(CompendioApplication app)
         var created = await CreateAsync(client, "IT", "Configuración de sesión", "Cuerpo sin portada.\n");
 
         created.Title.ShouldBe("Configuración de sesión");
-        created.Path.ShouldBe("IT/configuracion-de-sesion.md");
+        created.Path.ShouldBe("IT/Configuracion-de-sesion.md");
 
         var file = app.ReadFile(created.Path);
         file.ShouldContain("title: Configuración de sesión");
@@ -82,9 +82,9 @@ public sealed class PageLifecycleTests(CompendioApplication app)
     /// wrong and cannot act on <c>path.invalid</c>.
     /// </remarks>
     [Theory]
-    [InlineData("Con", "IT/_con.md")]
-    [InlineData("Nul", "IT/_nul.md")]
-    [InlineData("Versión 1..2", "IT/version-1.2.md")]
+    [InlineData("Con", "IT/_Con.md")]
+    [InlineData("Nul", "IT/_Nul.md")]
+    [InlineData("Versión 1..2", "IT/Version-1.2.md")]
     public async Task ATitleThatWouldSlugifyIntoAnUnusableNameIsStillCreated(string title, string expectedPath)
     {
         var client = await app.SignInAsAdminAsync();
