@@ -541,10 +541,27 @@ public sealed class ContentStore(
         return File.Exists(encrypted) ? (encrypted, true) : null;
     }
 
+    /// <summary>How an in-flight atomic write is named while it is being written.</summary>
+    private const string TemporaryWritePrefix = ".compendio-";
+
+    private const string TemporaryWriteSuffix = ".tmp";
+
+    /// <summary>
+    /// Whether a file name is one of the store's own in-flight writes.
+    /// </summary>
+    /// <remarks>
+    /// For anything that walks the content folder outside the store — the backup, most of all. The
+    /// temp file is open with no sharing until it is moved into place, so on Windows reading it
+    /// throws; and it is not content, so it has no business in an archive either way.
+    /// </remarks>
+    public static bool IsTemporaryWrite(string fileName) =>
+        fileName.StartsWith(TemporaryWritePrefix, StringComparison.Ordinal) &&
+        fileName.EndsWith(TemporaryWriteSuffix, StringComparison.OrdinalIgnoreCase);
+
     private static async Task WriteAtomicAsync(string target, byte[] payload, CancellationToken cancellationToken)
     {
         var directory = Path.GetDirectoryName(target)!;
-        var temp = Path.Combine(directory, $".compendio-{Guid.CreateVersion7():N}.tmp");
+        var temp = Path.Combine(directory, $"{TemporaryWritePrefix}{Guid.CreateVersion7():N}{TemporaryWriteSuffix}");
 
         try
         {

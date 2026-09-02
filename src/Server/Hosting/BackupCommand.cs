@@ -120,9 +120,20 @@ public static class BackupCommand
             var files = 0;
             foreach (var file in Directory.EnumerateFiles(dataDirectory.Content, "*", SearchOption.AllDirectories))
             {
+                // The store's in-flight writes: open with no sharing until they are moved into place,
+                // and not content. On Windows zipping one throws a sharing violation, which used to
+                // fail the whole backup whenever somebody saved a page while it ran.
+                if (Infrastructure.Content.ContentStore.IsTemporaryWrite(Path.GetFileName(file)))
+                {
+                    continue;
+                }
+
                 var relative = Path.GetRelativePath(dataDirectory.Content, file).Replace(Path.DirectorySeparatorChar, '/');
-                archive.CreateEntryFromFile(file, ContentPrefix + relative, CompressionLevel.Optimal);
-                files++;
+
+                if (await TryAddFileAsync(archive, file, ContentPrefix + relative, cancellationToken))
+                {
+                    files++;
+                }
             }
 
             if (scopeCount > 0)
@@ -163,6 +174,43 @@ public static class BackupCommand
             if (File.Exists(temporaryDatabase))
             {
                 File.Delete(temporaryDatabase);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds one file to the archive, riding out the two things a live content folder does to a
+    /// walker: a file that vanishes between being listed and being opened, and a file briefly held
+    /// by another writer or an antivirus scan.
+    /// </summary>
+    /// <remarks>
+    /// A vanished file is skipped — it was a temporary of some kind, or a page deleted mid-backup,
+    /// and the database copy taken a moment earlier is the record of what existed. A held file is
+    /// retried a few times and then rethrown: silently leaving a real page out of a backup is the one
+    /// outcome worse than a backup that fails loudly.
+    /// </remarks>
+    private static async Task<bool> TryAddFileAsync(ZipArchive archive, string file, string entryName, CancellationToken cancellationToken)
+    {
+        const int attempts = 5;
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                archive.CreateEntryFromFile(file, entryName, CompressionLevel.Optimal);
+                return true;
+            }
+            catch (FileNotFoundException)
+            {
+                return false;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                return false;
+            }
+            catch (IOException) when (attempt < attempts)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), cancellationToken);
             }
         }
     }
