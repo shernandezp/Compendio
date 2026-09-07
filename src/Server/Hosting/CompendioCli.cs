@@ -253,7 +253,7 @@ public static class CompendioCli
             return 1;
         }
 
-        await using var db = services.GetRequiredService<IDbContextFactory<CompendioDbContext>>().CreateDbContext();
+        var db = services.GetRequiredService<CompendioDbContext>();
 
         var admin = userName is null
             ? await db.Users.Where(u => u.Role == UserRole.Admin && u.Active).OrderBy(u => u.CreatedAt).FirstOrDefaultAsync()
