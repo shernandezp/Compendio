@@ -580,8 +580,7 @@ public sealed class ContentStore(
 
             if (File.Exists(target))
             {
-                // Replace keeps the destination's ACLs and attributes, which matters on a share.
-                File.Replace(temp, target, destinationBackupFileName: null, ignoreMetadataErrors: true);
+                await ReplaceAsync(temp, target, cancellationToken);
             }
             else
             {
@@ -591,6 +590,25 @@ public sealed class ContentStore(
         finally
         {
             TryDelete(temp);
+        }
+    }
+
+    private static async Task ReplaceAsync(string temp, string target, CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                // Replace keeps the destination's ACLs and attributes, which matters on a share.
+                File.Replace(temp, target, destinationBackupFileName: null, ignoreMetadataErrors: true);
+                return;
+            }
+            catch (IOException) when (attempt < 10)
+            {
+                // Antivirus and indexers open a just-written file briefly, and Windows refuses to
+                // replace it until they let go.
+                await Task.Delay(50 * attempt, cancellationToken);
+            }
         }
     }
 
