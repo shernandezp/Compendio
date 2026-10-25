@@ -231,10 +231,10 @@ if (-not $PSBoundParameters.ContainsKey('OpenFirewall')) {
 
 Write-Step 'Registering the service'
 
-[Environment]::SetEnvironmentVariable('DataDir', $DataDir, 'Machine')
+$serviceEnvironment = [ordered]@{ DataDir = $DataDir }
 
 if ($Port -ne 8080) {
-    [Environment]::SetEnvironmentVariable('Urls', "http://0.0.0.0:$Port", 'Machine')
+    $serviceEnvironment.Urls = "http://0.0.0.0:$Port"
 }
 
 <#
@@ -242,16 +242,13 @@ if ($Port -ne 8080) {
 
     Compendio creates this from configuration at startup and only when no account exists at all,
     so re-running this script can never mint a second administrator or reset an existing one. The
-    values are set as machine variables because that is the only channel the service reads at
-    start, and they are removed again as soon as the account exists -- a password left in the
-    registry is a password somebody finds a year later.
+    values are removed from the service again as soon as the account exists -- a password left in
+    the registry is a password somebody finds a year later.
 #>
 $password = $null
 
 if ($isFreshInstall) {
     $password = New-Password
-    [Environment]::SetEnvironmentVariable('Bootstrap__AdminUser', 'admin', 'Machine')
-    [Environment]::SetEnvironmentVariable('Bootstrap__AdminPassword', $password, 'Machine')
 }
 
 $service = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
@@ -318,11 +315,30 @@ Write-Ok "$ServiceAccount can read $InstallPath"
 #>
 $extractDir = Join-Path $DataDir 'bundle'
 New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
-[Environment]::SetEnvironmentVariable('DOTNET_BUNDLE_EXTRACT_BASE_DIR', $extractDir, 'Machine')
+$serviceEnvironment.DOTNET_BUNDLE_EXTRACT_BASE_DIR = $extractDir
 
-# Also in this process, so the warm-up below extracts to the same place the service will look.
-# Setting a machine variable does not change the environment of a process already running.
+function Set-ServiceEnvironment([System.Collections.IDictionary]$Values) {
+    $entries = [string[]]($Values.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" })
+    Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\$ServiceName" -Name Environment -Type MultiString -Value $entries
+}
+
+$startEnvironment = [ordered]@{} + $serviceEnvironment
+if ($password) {
+    $startEnvironment.Bootstrap__AdminUser = 'admin'
+    $startEnvironment.Bootstrap__AdminPassword = $password
+}
+
+Set-ServiceEnvironment $startEnvironment
+
+# Older versions wrote these machine-wide; a value another product has since overwritten is theirs.
+foreach ($legacy in $serviceEnvironment.GetEnumerator()) {
+    if ([Environment]::GetEnvironmentVariable($legacy.Key, 'Machine') -eq $legacy.Value) {
+        [Environment]::SetEnvironmentVariable($legacy.Key, $null, 'Machine')
+    }
+}
+
 $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR = $extractDir
+$env:DataDir = $DataDir
 
 <#
     Unpack the bundle before the service is asked to start.
@@ -422,6 +438,7 @@ Write-Host ''
 
 # The password has done its job the moment the account exists. Clear it either way: on failure it
 # is equally undesirable to leave it behind, and the account will be created on the next start.
+Set-ServiceEnvironment $serviceEnvironment
 [Environment]::SetEnvironmentVariable('Bootstrap__AdminUser', $null, 'Machine')
 [Environment]::SetEnvironmentVariable('Bootstrap__AdminPassword', $null, 'Machine')
 
@@ -432,7 +449,7 @@ if (-not $ready) {
     Write-Host ''
     Write-Host '  If it does not load, check what it says about itself:' -ForegroundColor Yellow
     Write-Host ''
-    Write-Host "    & '$executable' doctor" -ForegroundColor White
+    Write-Host "    & '$executable' doctor --DataDir '$DataDir'" -ForegroundColor White
     Write-Host ''
 
     if ($isFreshInstall -and $password) {
@@ -475,7 +492,7 @@ if ($isFreshInstall) {
     Write-Host '   shown again. Change it under Profile once you are in.' -ForegroundColor DarkGray
     Write-Host ''
     Write-Host '   Forgotten it later?' -ForegroundColor DarkGray
-    Write-Host "     & '$executable' reset-admin-password --password '<new one>'" -ForegroundColor DarkGray
+    Write-Host "     & '$executable' reset-admin-password --DataDir '$DataDir' --password '<new one>'" -ForegroundColor DarkGray
 }
 else {
     Write-Host ''
