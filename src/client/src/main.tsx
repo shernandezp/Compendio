@@ -12,7 +12,7 @@ import './styles.css';
 
 import { App } from './App';
 import { initI18n } from './i18n';
-import { api } from './lib/api';
+import { api, UNAUTHENTICATED_EVENT } from './lib/api';
 import { cspNonce } from './lib/csp';
 import { pruneDrafts } from './features/editor/drafts';
 
@@ -45,6 +45,29 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
+});
+
+// The session ended under an open tab; re-reading it lets App swap to the login screen.
+window.addEventListener(UNAUTHENTICATED_EVENT, () => {
+  void queryClient.invalidateQueries({ queryKey: ['session'] });
+});
+
+const RELOADED_AT = 'compendio.chunk-reload';
+
+// A deploy replaced the hashed chunks this tab was loaded with. The shell is no-store, so one reload
+// picks up the new names; the timestamp stops a genuinely missing chunk from reloading forever.
+window.addEventListener('vite:preloadError', (event) => {
+  try {
+    if (Date.now() - Number(sessionStorage.getItem(RELOADED_AT) ?? 0) < 10_000) {
+      return;
+    }
+    sessionStorage.setItem(RELOADED_AT, String(Date.now()));
+  } catch {
+    return;
+  }
+
+  event.preventDefault();
+  window.location.reload();
 });
 
 async function bootstrap(): Promise<void> {

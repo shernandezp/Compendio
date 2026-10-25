@@ -274,9 +274,17 @@ public static class CompendioHost
         // The SPA owns client-side routing; anything else unmatched is its problem, not a 404 here.
         // Served through SpaShell rather than as a static file, because the shell has to carry this
         // response's CSP nonce — see SecurityHeadersMiddleware.
-        app.MapFallback((HttpContext http, SpaShell shell) => shell.WriteAsync(http))
-            .ExcludeFromDescription();
+        app.MapFallback(WriteSpaShell).ExcludeFromDescription();
+
+        // The default fallback skips any URL whose last segment looks like a file, and these client
+        // routes end in one (/p/IT/vpn.md), so a reload or a pasted link 404'd.
+        foreach (var route in new[] { "/p", "/edit", "/history", "/admin/access" })
+        {
+            app.MapFallback($"{route}/{{**path}}", WriteSpaShell).ExcludeFromDescription();
+        }
     }
+
+    private static Task WriteSpaShell(HttpContext http, SpaShell shell) => shell.WriteAsync(http);
 
     /// <summary>
     /// Asserts that no static file provider is mapped over the content folder.
