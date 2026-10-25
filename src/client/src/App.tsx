@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Center, Loader } from '@mantine/core';
 
@@ -28,6 +28,13 @@ const AskWikiPage = lazy(() =>
   import('./features/ai/AskWikiPage').then((m) => ({ default: m.AskWikiPage })));
 const HelpPage = lazy(() => import('./features/help/HelpPage').then((m) => ({ default: m.HelpPage })));
 
+function RedirectToLogin() {
+  const { pathname, search, hash } = useLocation();
+  const next = pathname + search + hash;
+
+  return <Navigate to={next === '/' ? '/login' : `/login?next=${encodeURIComponent(next)}`} replace />;
+}
+
 export function App() {
   const session = useQuery({ queryKey: ['session'], queryFn: api.session });
 
@@ -53,7 +60,7 @@ export function App() {
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<RedirectToLogin />} />
       </Routes>
     );
   }

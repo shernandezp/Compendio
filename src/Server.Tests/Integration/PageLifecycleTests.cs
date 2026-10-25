@@ -490,6 +490,36 @@ public sealed class PageLifecycleTests(CompendioApplication app)
         again.Headers.GetValues("Content-Security-Policy").Single().ShouldNotContain($"'nonce-{nonce}'");
     }
 
+    [Theory]
+    [InlineData("/p/IT/vpn.md")]
+    [InlineData("/edit/IT/vpn.md")]
+    [InlineData("/history/IT/vpn.md")]
+    [InlineData("/admin/access/Releases/v1.2")]
+    [InlineData("/p/Implementaci%C3%B3n/Creaci%C3%B3n%20de%20cuentas.md")]
+    [InlineData("/p/IT")]
+    [InlineData("/p")]
+    [InlineData("/edit/new?folder=IT")]
+    [InlineData("/dashboard")]
+    public async Task DeepLinksToAPageServeTheSpaShell(string url)
+    {
+        using var client = app.CreateClient();
+        var response = await client.GetAsync(url, Ct);
+
+        response.EnsureSuccessStatusCode();
+        response.Content.Headers.ContentType!.MediaType.ShouldBe("text/html");
+    }
+
+    [Theory]
+    [InlineData("/assets/missing.js")]
+    [InlineData("/api/v1/typo.md")]
+    public async Task MissingFilesAndApiRoutesAreStillNotFound(string url)
+    {
+        using var client = app.CreateClient();
+        var response = await client.GetAsync(url, Ct);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
     /// <summary>
     /// Changing a title is a front-matter edit, not a move: the <c>title:</c> key changes and the
     /// file name, path and body do not — so every link and bookmark to the page keeps working.

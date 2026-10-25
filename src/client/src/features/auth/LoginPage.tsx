@@ -1,13 +1,20 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Alert, Button, Card, Center, Checkbox, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
 
 import { api, ApiError } from '../../lib/api';
 
+// Only a path on this origin: `//host` and `/\host` are protocol-relative to a browser.
+export function safeNext(next: string | null): string {
+  return next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : '/';
+}
+
 export function LoginPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
 
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +30,7 @@ export function LoginPage() {
     try {
       await api.login(userName, password, persistent);
       await queryClient.invalidateQueries();
-      window.location.assign('/');
+      window.location.assign(safeNext(searchParams.get('next')));
     } catch (error) {
       // One message whatever went wrong. Telling somebody the user name was right would turn this
       // form into a way to enumerate accounts.

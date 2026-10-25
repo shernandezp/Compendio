@@ -36,6 +36,8 @@ export class ApiError extends Error {
   }
 }
 
+export const UNAUTHENTICATED_EVENT = 'compendio:unauthenticated';
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -57,6 +59,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = isJson ? await response.json() : await response.text();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      window.dispatchEvent(new Event(UNAUTHENTICATED_EVENT));
+    }
+
     if (isJson && body && typeof body === 'object') {
       const { title, detail, code, status, instance, type, ...extensions } = body as Record<string, unknown>;
       void status;
@@ -112,8 +118,7 @@ const del = <T>(path: string) => request<T>(path, { method: 'DELETE' });
 export const isAbort = (error: unknown) =>
   error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
 
-// ---- Shapes the API returns. Regenerated into schema.d.ts by openapi-typescript in CI; these are
-// ---- the hand-written subset the screens actually use.
+// ---- Shapes the API returns: the hand-written subset the screens actually use.
 
 export type PermissionLevel = 'None' | 'Read' | 'Write' | 'Manage';
 export type UserRole = 'Reader' | 'Editor' | 'Admin';
